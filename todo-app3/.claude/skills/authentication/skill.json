@@ -1,0 +1,50 @@
+{
+  "name": "authentication",
+  "version": "1.0.0",
+  "title": "Authentication Module Generator",
+  "description": "Generate comprehensive authentication modules including JWT login, signup, password hashing, OAuth2 flows, and role-based access control",
+  "author": "Claude Code",
+  "category": "security",
+  "tags": ["authentication", "jwt", "oauth2", "rbac", "security", "login", "signup", "password-hashing"],
+  "supportedLanguages": ["python", "javascript", "typescript", "go", "rust"],
+  "files": [
+    "skill.py",
+    "templates/jwt_auth.py.j2",
+    "templates/oauth2_flow.py.j2",
+    "templates/rbac.py.j2",
+    "templates/password_utils.py.j2",
+    "templates/models.py.j2",
+    "templates/schemas.py.j2",
+    "templates/routes.py.j2"
+  ],
+  "parameters": [
+    {
+      "name": "auth_type",
+      "type": "string",
+      "required": true,
+      "description": "Type of authentication to generate (jwt, oauth2, both)",
+      "default": "jwt"
+    },
+    {
+      "name": "language",
+      "type": "string",
+      "required": false,
+      "description": "Target programming language (python, javascript, typescript, go, rust)",
+      "default": "python"
+    },
+    {
+      "name": "include_rbac",
+      "type": "boolean",
+      "required": false,
+      "description": "Include role-based access control",
+      "default": true
+    },
+    {
+      "name": "include_password_hashing",
+      "type": "boolean",
+      "required": false,
+      "description": "Include password hashing utilities",
+      "default": true
+    }
+  ]
+}

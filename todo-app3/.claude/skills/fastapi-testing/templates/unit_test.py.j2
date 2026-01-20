@@ -1,0 +1,69 @@
+import pytest
+from unittest.mock import patch, MagicMock
+import sys
+import os
+
+# Add the parent directory to the path to import the target module
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+import {{ target_file.split("/")[-1].replace(".py", "") if target_file else "main" }}
+
+# Import fixtures
+from .fixtures import *
+from .conftest import *
+
+{% if analyzed_code and analyzed_code['functions'] %}
+{% for func in analyzed_code['functions'] %}
+def test_{{ func['name'] }}_with_valid_input(mock_database):
+    """Test {{ func['name'] }} with valid input"""
+    from {{ target_file.replace(".py", "").replace("/", ".") if target_file else "main" }} import {{ func['name'] }}
+
+    # Arrange
+    # Set up test data
+
+    # Act
+    result = {{ func['name'] }}({% for arg in func['args'] %}arg_value{% if not loop.last %}, {% endif %}{% endfor %})  # Adjust based on actual function signature
+
+    # Assert
+    assert result is not None
+
+
+def test_{{ func['name'] }}_with_invalid_input(mock_database):
+    """Test {{ func['name'] }} with invalid input"""
+    from {{ target_file.replace(".py", "").replace("/", ".") if target_file else "main" }} import {{ func['name'] }}
+
+    # Arrange
+    # Set up invalid test data
+
+    # Act & Assert
+    with pytest.raises(Exception):  # Replace with specific exception
+        {{ func['name'] }}({% for arg in func['args'] %}invalid_arg_value{% if not loop.last %}, {% endif %}{% endfor %})  # Adjust based on actual function signature
+{% endfor %}
+{% else %}
+def test_sample_unit_function(mock_service):
+    """Test sample unit function"""
+    # Replace with actual function tests
+    assert True
+
+def test_another_unit_function(mock_database):
+    """Test another unit function"""
+    # Replace with actual function tests
+    assert True
+{% endif %}
+
+class TestUnitFunctions:
+    """Unit tests for individual functions"""
+
+    def test_sample_method(self, mock_service):
+        """Test sample method"""
+        # Replace with actual method tests
+        assert True
+
+    def test_edge_cases(self, mock_database):
+        """Test edge cases"""
+        # Add edge case tests
+        assert True
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

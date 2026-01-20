@@ -1,0 +1,35 @@
+# Database Schema Requirements
+
+# FastAPI framework
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+
+# SQL Databases
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+
+# PostgreSQL
+psycopg2-binary>=2.9.7
+# Alternative: asyncpg>=0.29.0  # For async PostgreSQL operations
+
+# SQLite
+# Built into Python, no additional packages needed
+# For advanced features: pysqlite3>=0.5.2
+
+# MongoDB
+pymongo>=4.6.0
+odmantic>=0.9.0  # For MongoDB ODM
+
+# Pydantic for data validation
+pydantic>=2.4.0
+pydantic[email]>=2.4.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0
+
+# Utilities
+python-multipart>=0.0.6
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0

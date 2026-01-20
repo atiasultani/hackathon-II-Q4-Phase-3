@@ -1,0 +1,83 @@
+import pytest
+from datetime import datetime, timedelta
+from unittest.mock import Mock, MagicMock
+import json
+
+# Sample data fixtures
+@pytest.fixture
+def sample_user_data():
+    """Sample user data for testing"""
+    return {
+        "username": "testuser",
+        "email": "test@example.com",
+        "password": "testpassword123"
+    }
+
+@pytest.fixture
+def sample_todo_data():
+    """Sample todo data for testing"""
+    return {
+        "title": "Test Todo",
+        "description": "Test description",
+        "completed": False
+    }
+
+@pytest.fixture
+def mock_database():
+    """Mock database session for unit tests"""
+    mock_session = Mock()
+    mock_session.add = Mock()
+    mock_session.commit = Mock()
+    mock_session.refresh = Mock()
+    mock_session.query = Mock()
+    return mock_session
+
+@pytest.fixture
+def mock_service():
+    """Mock service for testing"""
+    mock_svc = Mock()
+    return mock_svc
+
+@pytest.fixture
+def auth_token():
+    """Sample authentication token"""
+    return "fake-jwt-token"
+
+# API response fixtures
+@pytest.fixture
+def successful_response():
+    """Sample successful API response"""
+    return {"status": "success", "data": {}}
+
+@pytest.fixture
+def error_response():
+    """Sample error API response"""
+    return {"status": "error", "message": "Something went wrong"}
+
+# Model instance fixtures
+class MockModel:
+    """Base mock model for testing"""
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+@pytest.fixture
+def mock_user():
+    """Mock user instance"""
+    return MockModel(
+        id=1,
+        username="testuser",
+        email="test@example.com",
+        is_active=True
+    )
+
+@pytest.fixture
+def mock_todo():
+    """Mock todo instance"""
+    return MockModel(
+        id=1,
+        title="Test Todo",
+        description="Test description",
+        completed=False,
+        user_id=1
+    )

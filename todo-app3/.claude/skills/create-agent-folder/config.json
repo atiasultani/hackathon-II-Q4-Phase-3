@@ -1,0 +1,14 @@
+{
+  "name": "create-agent-folder",
+  "description": "Creates a new agent directory in the .claude/agents folder with the given agent name",
+  "type": "script",
+  "path": "./create-agent-folder.sh",
+  "parameters": [
+    {
+      "name": "agent_name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the agent to create"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+# FastAPI CRUD Requirements
+
+fastapi>=0.104.1
+sqlalchemy>=2.0.0
+pydantic>=2.4.0
+pydantic[email]
+uvicorn[standard]
+python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
+alembic
+pytest
+pytest-cov
+httpx

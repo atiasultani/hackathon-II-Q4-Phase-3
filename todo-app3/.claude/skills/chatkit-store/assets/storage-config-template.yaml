@@ -1,0 +1,75 @@
+storage:
+  # Primary storage configuration
+  primary:
+    type: "postgresql"  # Options: postgresql, mongodb, mysql
+    connection:
+      host: "localhost"
+      port: 5432
+      database: "chatkit_store"
+      username: "chatkit_user"
+      password: "secure_password"
+      ssl: false
+    pool:
+      min: 5
+      max: 20
+      acquire_timeout: 30000  # ms
+      idle_timeout: 60000     # ms
+
+  # Secondary storage (for file attachments, etc.)
+  secondary:
+    type: "s3"  # Options: s3, filesystem, gcs
+    s3:
+      access_key_id: "your-access-key"
+      secret_access_key: "your-secret-key"
+      bucket: "chatkit-attachments"
+      region: "us-east-1"
+      endpoint: ""  # Leave empty for AWS S3
+    filesystem:
+      path: "/var/chatkit/uploads"
+      max_size: "10GB"
+      allowed_extensions: [".jpg", ".jpeg", ".png", ".gif", ".pdf", ".doc", ".docx"]
+
+  # Caching layer
+  cache:
+    type: "redis"
+    redis:
+      host: "localhost"
+      port: 6379
+      db: 0
+      password: ""
+      ttl: 3600  # seconds
+    memory:
+      max_size: 1000
+      ttl: 1800  # seconds
+
+data_retention:
+  # Data retention policies
+  messages:
+    retention_days: 365  # Keep messages for 1 year
+    archive_after: 90    # Archive after 90 days
+    delete_after: 0      # Never auto-delete (0 = never)
+
+  files:
+    retention_days: 730  # Keep files for 2 years
+    archive_after: 180   # Archive after 180 days
+    delete_after: 0      # Never auto-delete
+
+  logs:
+    retention_days: 90   # Keep logs for 90 days
+    archive_after: 30    # Archive after 30 days
+    delete_after: 0      # Never auto-delete
+
+backup:
+  # Backup configuration
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention:
+    daily: 7             # Keep 7 daily backups
+    weekly: 4            # Keep 4 weekly backups
+    monthly: 12          # Keep 12 monthly backups
+  destination:
+    type: "s3"
+    s3:
+      bucket: "chatkit-backups"
+      region: "us-east-1"
+    local:
+      path: "/backups/chatkit"

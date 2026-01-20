@@ -1,0 +1,25 @@
+{
+  "name": "todo-app-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for AI-powered Todo Chatbot",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["react", "chatkit", "todo", "ai"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@openai/chatkit": "^1.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.4.0",
+    "eslint": "^8.0.0"
+  }
+}

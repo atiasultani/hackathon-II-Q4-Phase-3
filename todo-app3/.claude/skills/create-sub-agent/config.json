@@ -1,0 +1,26 @@
+{
+  "name": "create-sub-agent",
+  "description": "Creates a dependent sub-agent under a parent agent",
+  "type": "script",
+  "path": "./create-sub-agent.sh",
+  "parameters": [
+    {
+      "name": "parent_agent",
+      "type": "string",
+      "required": true,
+      "description": "The name of the parent agent"
+    },
+    {
+      "name": "sub_agent_name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the sub-agent to create"
+    },
+    {
+      "name": "purpose",
+      "type": "string",
+      "required": true,
+      "description": "The purpose of the sub-agent"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+debug:
+  # Debugging configuration
+  enabled: true
+  level: "debug"
+  log_file: "/var/log/chatkit/debug.log"
+
+  # Performance monitoring
+  performance_monitoring:
+    enabled: true
+    sample_rate: 0.1  # 10% of requests
+    slow_query_threshold: 100  # ms
+
+  # Error tracking
+  error_tracking:
+    enabled: true
+    service: "sentry"
+    dsn: "https://your-dsn.sentry.io"
+
+  # Request tracing
+  tracing:
+    enabled: true
+    provider: "jaeger"
+    endpoint: "http://jaeger:14268/api/traces"
+
+monitoring:
+  # Application metrics
+  metrics:
+    enabled: true
+    provider: "prometheus"
+    port: 9090
+
+  # Health checks
+  health_checks:
+    enabled: true
+    endpoints:
+      - path: "/health"
+        timeout: 5000  # ms
+      - path: "/health/database"
+        timeout: 3000  # ms
+      - path: "/health/cache"
+        timeout: 3000  # ms
+
+logging:
+  # Detailed logging configuration
+  level: "debug"
+  format: "json"
+  transports:
+    - type: "console"
+      level: "debug"
+    - type: "file"
+      level: "info"
+      filename: "/var/log/chatkit/app.log"
+    - type: "error_file"
+      level: "error"
+      filename: "/var/log/chatkit/error.log"
+
+profiling:
+  # Performance profiling
+  cpu_profiling:
+    enabled: false
+    interval: 10000  # ms
+    duration: 30000  # ms
+
+  memory_profiling:
+    enabled: true
+    heap_snapshots: true
+    snapshot_interval: 60000  # ms

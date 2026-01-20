@@ -1,0 +1,20 @@
+{
+  "name": "assign-agent-skills",
+  "description": "Attaches relevant skills to a newly created agent and defines what it can and cannot do",
+  "type": "script",
+  "path": "./assign-agent-skills.sh",
+  "parameters": [
+    {
+      "name": "agent_name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the agent"
+    },
+    {
+      "name": "list_of_skills",
+      "type": "string",
+      "required": true,
+      "description": "A comma-separated list of skills to assign to the agent"
+    }
+  ]
+}

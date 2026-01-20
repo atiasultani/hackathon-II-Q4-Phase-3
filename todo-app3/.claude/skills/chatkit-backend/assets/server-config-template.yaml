@@ -1,0 +1,61 @@
+server:
+  # Server configuration
+  port: 3000
+  host: "0.0.0.0"
+  environment: "production"
+
+  # Security settings
+  cors:
+    origin: "*"
+    credentials: true
+
+  # Rate limiting
+  rate_limit:
+    window_ms: 900000  # 15 minutes
+    max_requests: 100
+
+database:
+  # Database connection settings
+  type: "postgresql"
+  host: "localhost"
+  port: 5432
+  name: "chatkit_db"
+  username: "chatkit_user"
+  password: "secure_password"
+  pool_size: 10
+  ssl: false
+
+authentication:
+  # JWT configuration
+  jwt:
+    secret: "your-super-secret-jwt-key-here"
+    expiry: "24h"
+
+  # OAuth providers
+  oauth:
+    google:
+      client_id: "your-google-client-id"
+      client_secret: "your-google-client-secret"
+    github:
+      client_id: "your-github-client-id"
+      client_secret: "your-github-client-secret"
+
+realtime:
+  # WebSocket configuration
+  websocket:
+    ping_interval: 30000  # 30 seconds
+    max_connections: 10000
+    max_payload: 1048576  # 1MB
+
+logging:
+  # Logging configuration
+  level: "info"
+  format: "json"
+  file: "/var/log/chatkit/backend.log"
+
+monitoring:
+  # Application monitoring
+  apm:
+    enabled: true
+    provider: "datadog"
+    api_key: "your-apm-api-key"

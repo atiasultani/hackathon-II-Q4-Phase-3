@@ -1,0 +1,27 @@
+memory:
+  # Memory storage configuration
+  storage:
+    type: "redis"  # Options: redis, postgresql, hybrid
+    redis:
+      host: "localhost"
+      port: 6379
+      db: 0
+      password: ""
+    postgresql:
+      host: "localhost"
+      port: 5432
+      database: "chatkit_memory"
+      username: "chatkit_user"
+      password: "secure_password"
+
+  # Memory limits and settings
+  limits:
+    max_context_tokens: 4000
+    max_conversation_history: 100
+    memory_ttl_seconds: 3600
+
+  # Caching settings
+  cache:
+    enabled: true
+    size_limit: 1000
+    eviction_policy: "lru"  # Options: lru, fifo, priority

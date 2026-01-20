@@ -1,0 +1,20 @@
+{
+  "name": "register-agent",
+  "description": "Ensures newly created agent becomes officially part of the system registry",
+  "type": "script",
+  "path": "./register-agent.sh",
+  "parameters": [
+    {
+      "name": "agent_name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the agent to register"
+    },
+    {
+      "name": "agent_role",
+      "type": "string",
+      "required": true,
+      "description": "The role of the agent (primary, sub, or meta)"
+    }
+  ]
+}

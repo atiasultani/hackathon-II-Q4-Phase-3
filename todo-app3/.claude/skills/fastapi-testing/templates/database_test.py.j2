@@ -1,0 +1,241 @@
+import pytest
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from models import *  # Import your models
+from database import Base
+
+# Import fixtures
+from .fixtures import *
+from .conftest import *
+
+def test_database_connection(db_session):
+    """Test database connection"""
+    # Execute a simple query to test connection
+    result = db_session.execute(text("SELECT 1"))
+    assert result.fetchone()[0] == 1
+
+
+def test_user_model_creation(db_session):
+    """Test creating and saving a user model"""
+    from models.user_model import User  # Adjust import based on your model structure
+
+    user = User(
+        username="testuser",
+        email="test@example.com",
+        is_active=True
+    )
+
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    assert user.id is not None
+    assert user.username == "testuser"
+    assert user.email == "test@example.com"
+    assert user.is_active == True
+
+
+def test_todo_model_creation(db_session):
+    """Test creating and saving a todo model"""
+    from models.todo_model import Todo  # Adjust import based on your model structure
+
+    todo = Todo(
+        title="Test Todo",
+        description="Test description",
+        completed=False
+    )
+
+    db_session.add(todo)
+    db_session.commit()
+    db_session.refresh(todo)
+
+    assert todo.id is not None
+    assert todo.title == "Test Todo"
+    assert todo.completed == False
+
+
+def test_relationships(db_session):
+    """Test model relationships"""
+    from models.user_model import User
+    from models.todo_model import Todo
+
+    # Create a user
+    user = User(
+        username="testuser",
+        email="test@example.com",
+        is_active=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    # Create a todo for the user
+    todo = Todo(
+        title="Test Todo",
+        description="Test description",
+        completed=False,
+        user_id=user.id
+    )
+    db_session.add(todo)
+    db_session.commit()
+    db_session.refresh(todo)
+
+    # Verify the relationship
+    assert todo.user_id == user.id
+    # If you have relationship defined, you can test it like:
+    # assert todo.user == user
+
+
+def test_database_query(db_session):
+    """Test database queries"""
+    from models.user_model import User
+
+    # Create test users
+    users = [
+        User(username="user1", email="user1@example.com", is_active=True),
+        User(username="user2", email="user2@example.com", is_active=True),
+        User(username="user3", email="user3@example.com", is_active=False),
+    ]
+
+    for user in users:
+        db_session.add(user)
+
+    db_session.commit()
+
+    # Query active users
+    active_users = db_session.query(User).filter(User.is_active == True).all()
+    assert len(active_users) == 2
+
+    # Query by username
+    user = db_session.query(User).filter(User.username == "user1").first()
+    assert user is not None
+    assert user.email == "user1@example.com"
+
+
+def test_database_update(db_session):
+    """Test database updates"""
+    from models.user_model import User
+
+    # Create a user
+    user = User(
+        username="testuser",
+        email="test@example.com",
+        is_active=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    # Update the user
+    user.username = "updateduser"
+    user.email = "updated@example.com"
+    db_session.add(user)  # SQLAlchemy tracks changes automatically
+    db_session.commit()
+
+    # Verify the update
+    updated_user = db_session.query(User).filter(User.id == user.id).first()
+    assert updated_user.username == "updateduser"
+    assert updated_user.email == "updated@example.com"
+
+
+def test_database_delete(db_session):
+    """Test database deletion"""
+    from models.user_model import User
+
+    # Create a user
+    user = User(
+        username="testuser",
+        email="test@example.com",
+        is_active=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    user_id = user.id
+
+    # Delete the user
+    db_session.delete(user)
+    db_session.commit()
+
+    # Verify the user is deleted
+    deleted_user = db_session.query(User).filter(User.id == user_id).first()
+    assert deleted_user is None
+
+
+def test_database_rollback(db_session):
+    """Test database transaction rollback"""
+    from models.user_model import User
+
+    initial_count = db_session.query(User).count()
+
+    try:
+        # Add a user
+        user = User(username="rollback_test", email="rollback@example.com", is_active=True)
+        db_session.add(user)
+        db_session.flush()  # This will assign an ID but not commit
+
+        # Verify the user is temporarily in the session
+        temp_user = db_session.query(User).filter(User.username == "rollback_test").first()
+        assert temp_user is not None
+
+        # Raise an exception to trigger rollback
+        raise Exception("Test rollback")
+    except Exception:
+        pass  # Exception was expected
+
+    # After rollback, the user should not exist
+    final_count = db_session.query(User).count()
+    assert initial_count == final_count
+
+
+def test_database_constraints(db_session):
+    """Test database constraints"""
+    from models.user_model import User
+
+    # Test unique constraint
+    user1 = User(username="duplicate", email="duplicate@example.com", is_active=True)
+    db_session.add(user1)
+    db_session.commit()
+
+    # Try to create another user with same username
+    user2 = User(username="duplicate", email="another@example.com", is_active=True)
+    db_session.add(user2)
+
+    with pytest.raises(Exception):  # Adjust based on your DB constraint exception type
+        db_session.commit()
+        db_session.flush()
+
+
+def test_database_index_performance(db_session):
+    """Test that database indexes work as expected"""
+    from models.user_model import User
+    import time
+
+    # Create many users to test indexing
+    for idx in range(100):
+        user = User(
+            username=f"perf_test_user_{idx}",
+            email=f"perf{idx}@example.com",
+            is_active=True
+        )
+        db_session.add(user)
+
+    db_session.commit()
+
+    # Time a query that should use an index
+    start_time = time.time()
+    result = db_session.query(User).filter(User.username == "perf_test_user_50").first()
+    query_time = time.time() - start_time
+
+    # Verify the result
+    assert result is not None
+    assert result.username == "perf_test_user_50"
+
+    # Index queries should be fast (less than 100ms for this test)
+    assert query_time < 0.1
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

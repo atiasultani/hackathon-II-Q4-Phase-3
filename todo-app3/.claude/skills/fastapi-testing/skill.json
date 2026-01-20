@@ -1,0 +1,58 @@
+{
+  "name": "fastapi-testing",
+  "version": "1.0.0",
+  "title": "FastAPI Testing Generator",
+  "description": "Generate comprehensive pytest unit tests and integration tests for FastAPI endpoints, services, and database interactions",
+  "author": "Claude Code",
+  "category": "testing",
+  "tags": ["testing", "pytest", "fastapi", "unit-test", "integration-test", "api-test", "database-test"],
+  "supportedLanguages": ["python"],
+  "files": [
+    "skill.py",
+    "templates/conftest.py.j2",
+    "templates/endpoint_test.py.j2",
+    "templates/service_test.py.j2",
+    "templates/database_test.py.j2",
+    "templates/integration_test.py.j2",
+    "templates/unit_test.py.j2",
+    "templates/fixtures.py.j2",
+    "templates/test_config.py.j2"
+  ],
+  "parameters": [
+    {
+      "name": "test_type",
+      "type": "string",
+      "required": true,
+      "description": "Type of tests to generate (unit, integration, service, database, all)",
+      "default": "unit"
+    },
+    {
+      "name": "target_file",
+      "type": "string",
+      "required": false,
+      "description": "Path to the target file to generate tests for",
+      "default": null
+    },
+    {
+      "name": "include_fixtures",
+      "type": "boolean",
+      "required": false,
+      "description": "Include test fixtures and configuration",
+      "default": true
+    },
+    {
+      "name": "fastapi_app_path",
+      "type": "string",
+      "required": false,
+      "description": "Path to the FastAPI app instance",
+      "default": "main:app"
+    },
+    {
+      "name": "database_url",
+      "type": "string",
+      "required": false,
+      "description": "Database URL for testing",
+      "default": "sqlite:///./test.db"
+    }
+  ]
+}

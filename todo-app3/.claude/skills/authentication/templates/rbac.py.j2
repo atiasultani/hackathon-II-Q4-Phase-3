@@ -1,0 +1,108 @@
+from enum import Enum
+from typing import List, Dict, Any
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+from .models import User, Role
+
+class Permission(str, Enum):
+    """Define available permissions"""
+    READ_USERS = "read:users"
+    WRITE_USERS = "write:users"
+    DELETE_USERS = "delete:users"
+    READ_PROFILE = "read:profile"
+    WRITE_PROFILE = "write:profile"
+    ADMIN_ACCESS = "admin:access"
+    READ_ALL = "read:all"
+    WRITE_ALL = "write:all"
+
+class RolePermissions:
+    """Define permissions for each role"""
+
+    PERMISSIONS = {
+        "admin": [
+            Permission.READ_USERS,
+            Permission.WRITE_USERS,
+            Permission.DELETE_USERS,
+            Permission.READ_PROFILE,
+            Permission.WRITE_PROFILE,
+            Permission.ADMIN_ACCESS,
+            Permission.READ_ALL,
+            Permission.WRITE_ALL
+        ],
+        "moderator": [
+            Permission.READ_USERS,
+            Permission.WRITE_USERS,
+            Permission.READ_PROFILE,
+            Permission.WRITE_PROFILE,
+            Permission.READ_ALL
+        ],
+        "user": [
+            Permission.READ_PROFILE,
+            Permission.WRITE_PROFILE
+        ],
+        "guest": [
+            Permission.READ_PROFILE
+        ]
+    }
+
+    @classmethod
+    def get_permissions_for_role(cls, role: str) -> List[Permission]:
+        """Get permissions for a specific role"""
+        return cls.PERMISSIONS.get(role, [])
+
+    @classmethod
+    def has_permission(cls, role: str, permission: Permission) -> bool:
+        """Check if a role has a specific permission"""
+        role_permissions = cls.get_permissions_for_role(role)
+        return permission in role_permissions
+
+    @classmethod
+    def can_access_resource(cls, user_role: str, required_permission: Permission,
+                           resource_owner_id: int = None, user_id: int = None) -> bool:
+        """Check if user can access a resource"""
+        # Admins can access everything
+        if user_role == "admin":
+            return True
+
+        # Check basic permission
+        if not cls.has_permission(user_role, required_permission):
+            return False
+
+        # For profile-specific permissions, check ownership
+        if required_permission in [Permission.WRITE_PROFILE, Permission.READ_PROFILE]:
+            if resource_owner_id and user_id:
+                return resource_owner_id == user_id
+
+        return True
+
+def check_user_permissions(
+    db: Session,
+    user: User,
+    required_permission: Permission,
+    resource_owner_id: int = None
+) -> bool:
+    """Check if user has required permissions"""
+    return RolePermissions.can_access_resource(
+        user_role=user.role,
+        required_permission=required_permission,
+        resource_owner_id=resource_owner_id,
+        user_id=user.id
+    )
+
+def require_permission(permission: Permission):
+    """Decorator to require specific permission"""
+    def permission_checker(current_user: User = Depends(get_current_user)):
+        if not RolePermissions.has_permission(current_user.role, permission):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions"
+            )
+        return current_user
+    return permission_checker
+
+def get_user_roles_and_permissions(user: User) -> Dict[str, Any]:
+    """Get user's role and associated permissions"""
+    return {
+        "role": user.role,
+        "permissions": [perm.value for perm in RolePermissions.get_permissions_for_role(user.role)]
+    }

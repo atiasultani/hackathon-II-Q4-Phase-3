@@ -1,0 +1,32 @@
+{
+  "name": "create-agent-files",
+  "description": "Automatically generates standard required files for a new agent inside its folder",
+  "type": "script",
+  "path": "./create-agent-files.sh",
+  "parameters": [
+    {
+      "name": "agent_name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the agent"
+    },
+    {
+      "name": "agent_type",
+      "type": "string",
+      "required": true,
+      "description": "The type of agent being created"
+    },
+    {
+      "name": "agent_description",
+      "type": "string",
+      "required": true,
+      "description": "A description of what the agent does"
+    },
+    {
+      "name": "overwrite",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to overwrite existing files (default: false)"
+    }
+  ]
+}
