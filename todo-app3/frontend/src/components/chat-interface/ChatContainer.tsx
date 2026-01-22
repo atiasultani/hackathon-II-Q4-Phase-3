@@ -80,7 +80,7 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userId }) => {
       });
 
       // Call the backend API
-      const response = await axios.post(`http://localhost:8002/api/${userId}/chat`, {
+      const response = await axios.post(`http://localhost:8000/${userId}/chat`, {
         message: inputValue,
         conversation_id: conversationId
       });

@@ -49,10 +49,11 @@ const ChatInterface = ({ userId }) => {
 
     try {
       // Call the backend API
-      const response = await axios.post(`http://localhost:8002/api/${userId}/chat`, {
-        message: inputValue,
-        conversation_id: conversationId
-      });
+
+  const response = await axios.post(`http://127.0.0.1:8000/api/${userId}/chat`, {
+  message: inputValue,
+  conversation_id: conversationId
+});
 
       const aiMessage = {
         id: `ai-${Date.now()}`,

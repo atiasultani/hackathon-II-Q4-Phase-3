@@ -10,6 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch"
   },
+  "type": "module",
   "keywords": ["react", "chatkit", "todo", "ai"],
   "author": "",
   "license": "MIT",
