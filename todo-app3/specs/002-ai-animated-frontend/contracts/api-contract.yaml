@@ -1,0 +1,175 @@
+# API Contracts: AI Animated Frontend
+
+## Overview
+This document defines the API contracts between the animated frontend and backend services. These contracts ensure proper synchronization between frontend animations and backend processing states.
+
+## WebSocket Events for Real-time Animation Sync
+
+### Animation State Update
+**Event**: `animation_state_update`
+**Direction**: Backend → Frontend
+
+**Payload**:
+```json
+{
+  "event_type": "animation_state_update",
+  "conversation_id": "string",
+  "animation_state": {
+    "avatarExpression": "string",
+    "animationSequence": ["string"],
+    "isActive": "boolean",
+    "triggerEvent": "string",
+    "duration": "number",
+    "intensity": "number"
+  },
+  "timestamp": "ISO8601 datetime"
+}
+```
+
+**Usage**: Sent by backend when AI processing state changes, triggering appropriate animations on the frontend.
+
+### Agent Activity Update
+**Event**: `agent_activity_update`
+**Direction**: Backend → Frontend
+
+**Payload**:
+```json
+{
+  "event_type": "agent_activity_update",
+  "conversation_id": "string",
+  "agent_activity": {
+    "agentName": "string",
+    "status": "string",
+    "visualIndicator": "string",
+    "priority": "number"
+  },
+  "timestamp": "ISO8601 datetime"
+}
+```
+
+**Usage**: Sent when AI agents/skills are activated, deactivated, or change state, updating visual indicators.
+
+## HTTP Endpoints
+
+### Get User Animation Preferences
+**Endpoint**: `GET /api/user/preferences/animations`
+**Authentication**: Required
+
+**Response** (200 OK):
+```json
+{
+  "preferences": {
+    "animationsEnabled": "boolean",
+    "animationSpeed": "number",
+    "motionSensitivity": "string",
+    "colorTheme": "string",
+    "avatarStyle": "string"
+  }
+}
+```
+
+### Update User Animation Preferences
+**Endpoint**: `PUT /api/user/preferences/animations`
+**Authentication**: Required
+**Request Body**:
+```json
+{
+  "animationsEnabled": "boolean",
+  "animationSpeed": "number",
+  "motionSensitivity": "string",
+  "colorTheme": "string",
+  "avatarStyle": "string"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": "boolean",
+  "updatedPreferences": {
+    "animationsEnabled": "boolean",
+    "animationSpeed": "number",
+    "motionSensitivity": "string",
+    "colorTheme": "string",
+    "avatarStyle": "string"
+  }
+}
+```
+
+## Animation Synchronization Endpoints
+
+### Trigger Animation Event
+**Endpoint**: `POST /api/animation/trigger`
+**Authentication**: Required
+**Request Body**:
+```json
+{
+  "conversation_id": "string",
+  "event_type": "string",
+  "context": "object"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": "boolean",
+  "animation_triggered": "boolean",
+  "animation_id": "string"
+}
+```
+
+**Usage**: Called by frontend to request backend to broadcast animation state updates to all connected clients.
+
+### Animation Performance Metrics
+**Endpoint**: `POST /api/animation/performance`
+**Authentication**: Required
+**Request Body**:
+```json
+{
+  "device_info": {
+    "browser": "string",
+    "os": "string",
+    "memory": "number",
+    "cpu_cores": "number"
+  },
+  "performance_metrics": {
+    "average_fps": "number",
+    "frame_drop_count": "number",
+    "animation_duration": "number"
+  },
+  "timestamp": "ISO8601 datetime"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": "boolean",
+  "metrics_received": "boolean"
+}
+```
+
+**Usage**: Reports animation performance data from the frontend to backend for optimization.
+
+## Error Responses
+
+### Standard Error Format
+All endpoints may return error responses in this format:
+
+**Response** (4xx/5xx):
+```json
+{
+  "error": {
+    "code": "string",
+    "message": "string",
+    "details": "object"
+  }
+}
+```
+
+### Common Error Codes
+- `ANIMATION_PREF_NOT_FOUND`: User preferences not found
+- `ANIMATION_INVALID_INPUT`: Invalid animation preferences submitted
+- `ANIMATION_SYNC_FAILED`: Failed to synchronize animation state
+- `ANIMATION_PERFORMANCE_ERROR`: Performance metrics submission failed

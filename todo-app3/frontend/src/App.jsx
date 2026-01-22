@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import ChatInterface from './components/ChatInterface';
+import { UserPreferencesProvider } from './context/UserPreferencesContext';
+import ChatContainer from './components/chat-interface/ChatContainer';
 import './styles/App.css';
+import 'tailwindcss/tailwind.css';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -24,17 +26,19 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>AI-Powered Todo Chatbot</h1>
-        <div className="user-info">
-          <span>Welcome, {user?.name || 'User'}!</span>
-        </div>
-      </header>
-      <main className="app-main">
-        <ChatInterface userId={user.id} />
-      </main>
-    </div>
+    <UserPreferencesProvider>
+      <div className="app">
+        <header className="app-header">
+          <h1>AI-Powered Todo Chatbot</h1>
+          <div className="user-info">
+            <span>Welcome, {user?.name || 'User'}!</span>
+          </div>
+        </header>
+        <main className="app-main">
+          <ChatContainer userId={user.id} />
+        </main>
+      </div>
+    </UserPreferencesProvider>
   );
 }
 
