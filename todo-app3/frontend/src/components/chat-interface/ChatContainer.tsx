@@ -4,10 +4,11 @@ import AIAvatar from '../ai-avatar/AIAvatar';
 import { TypingAnimation } from '../ai-avatar/TypingAnimations';
 import { ProcessingVisuals } from '../ai-avatar/ProcessingVisuals';
 import { ResponseAnimation } from '../ai-avatar/ResponseAnimations';
-import axios from 'axios';
+import { sendMessage } from '../../services/api_client';
 
 interface ChatContainerProps {
   userId: string;
+  setTasks?: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 const ChatContainer: React.FC<ChatContainerProps> = ({ userId }) => {
@@ -80,10 +81,7 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userId }) => {
       });
 
       // Call the backend API
-      const response = await axios.post(`http://localhost:8000/${userId}/chat`, {
-        message: inputValue,
-        conversation_id: conversationId
-      });
+      const response = await sendMessage(userId, inputValue, conversationId);
 
       // Update avatar to thinking state during response
       updateAnimationState({
@@ -113,6 +111,22 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userId }) => {
 
       if (response.data.conversation_id && !conversationId) {
         setConversationId(response.data.conversation_id);
+      }
+
+      // Update tasks if included in response
+      if (response.data.tasks_updated && setTasks) {
+        setTasks(prevTasks => {
+          const updatedTasks = [...prevTasks];
+          response.data.tasks_updated.forEach(updatedTask => {
+            const existingIndex = updatedTasks.findIndex(t => t.id === updatedTask.id);
+            if (existingIndex !== -1) {
+              updatedTasks[existingIndex] = updatedTask;
+            } else {
+              updatedTasks.push(updatedTask);
+            }
+          });
+          return updatedTasks;
+        });
       }
     } catch (error) {
       console.error('Error sending message:', error);
