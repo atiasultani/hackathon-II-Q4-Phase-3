@@ -11,13 +11,12 @@
     "test:watch": "jest --watch"
   },
   "type": "module",
-  "keywords": ["react", "chatkit", "todo", "ai"],
+  "keywords": ["react", "todo", "ai"],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@openai/chatkit": "^1.0.0",
     "axios": "^1.6.0",
     "framer-motion": "^10.16.4",
     "three": "^0.158.0"

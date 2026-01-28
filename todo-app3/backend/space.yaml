@@ -1,0 +1,25 @@
+# Hugging Face Space configuration
+type: docker
+dockerfile: Dockerfile
+secrets:
+  - key: DATABASE_URL
+    description: PostgreSQL database URL
+    required: true
+  - key: SECRET_KEY
+    description: JWT secret key
+    required: true
+  - key: OPENAI_API_KEY
+    description: OpenAI API key for AI features
+    required: true
+  - key: ALGORITHM
+    description: JWT algorithm (default HS256)
+    value: "HS256"
+  - key: ACCESS_TOKEN_EXPIRE_MINUTES
+    description: Access token expiration in minutes (default 30)
+    value: "30"
+  - key: REFRESH_TOKEN_EXPIRE_DAYS
+    description: Refresh token expiration in days (default 7)
+    value: "7"
+  - key: OPENAI_MODEL
+    description: OpenAI model to use (default gpt-3.5-turbo)
+    value: "gpt-3.5-turbo"
