@@ -1,5 +1,5 @@
 // API client for communicating with the backend
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://asultani-todo3.hf.space';
+const API_BASE_URL ="https://asultani-todo3.hf.space";
 
 /**
  * Send a message to the chat endpoint
