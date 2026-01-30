@@ -1,5 +1,5 @@
 // API client for communicating with the backend
-const API_BASE_URL = 'http://localhost:7860'; // Updated to match the backend server
+const API_BASE_URL = 'https://asultani-todo3.hf.space'; // Updated to match the backend server
 
 /**
  * Send a message to the chat endpoint
@@ -156,3 +156,4 @@ export const getTokenForUser = async (userId = 'user123') => {
     throw error;
   }
 };
+
