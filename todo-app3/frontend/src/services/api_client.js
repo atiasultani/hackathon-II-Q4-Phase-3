@@ -15,7 +15,7 @@ export const sendMessage = async (userId, message, conversationId = null) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/${userId}/chat`, {
+    const response = await fetch(`${API_BASE_URL}/${userId}/chat`, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
@@ -49,7 +49,7 @@ export const fetchTasks = async (userId) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/tasks`, {
+    const response = await fetch(`${API_BASE_URL}/${userId}/tasks`, {
       method: 'GET',
       headers: headers
     });
@@ -79,7 +79,7 @@ export const updateTask = async (taskId, taskData) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
       method: 'PUT',
       headers: headers,
       body: JSON.stringify(taskData)
@@ -110,7 +110,7 @@ export const deleteTask = async (taskId) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
       method: 'DELETE',
       headers: headers
     });
@@ -131,7 +131,7 @@ export const deleteTask = async (taskId) => {
  */
 export const getTokenForUser = async (userId = 'user123') => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/token?user_id=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/token?user_id=${userId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -156,4 +156,5 @@ export const getTokenForUser = async (userId = 'user123') => {
     throw error;
   }
 };
+
 
