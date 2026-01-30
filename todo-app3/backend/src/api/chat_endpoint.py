@@ -21,6 +21,7 @@ async def chat_endpoint(
     request: Request,
     user_id: str,
     message_data: Dict[str, Any],
+    token: str = Depends(JWTBearer()),
     session: Session = Depends(get_session)
 ):
     """
@@ -54,14 +55,19 @@ async def chat_endpoint(
             detail="Message is required"
         )
 
-    # Convert user_id to UUID
+    # Convert user_id to UUID for database operations
+    # Since authentication has passed, we can use the authenticated user_id
+    # First, try to use the authenticated user_id from the request state
+    auth_user_id = getattr(request.state, 'user_id', None)
+
+    # Convert the authenticated user_id to UUID for database operations
     try:
-        user_uuid = UUID(user_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID format"
-        )
+        user_uuid = UUID(auth_user_id)
+    except (ValueError, TypeError, AttributeError):
+        # If the authenticated user_id is not a UUID or is None, handle string IDs
+        # For demo purposes with string user IDs like "user123", we'll create a deterministic UUID
+        import hashlib
+        user_uuid = uuid.UUID(bytes=hashlib.md5(auth_user_id.encode()).digest()[:16] if auth_user_id else b'default_user')
 
     # Initialize database service
     db_service = DatabaseService(session)

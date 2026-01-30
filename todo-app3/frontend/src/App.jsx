@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserPreferencesProvider } from './context/UserPreferencesContext';
 import ChatContainer from './components/chat-interface/ChatContainer';
 import TaskList from './components/TaskList';
-import { fetchTasks } from './services/api_client';
+import { fetchTasks, getTokenForUser } from './services/api_client';
 import './styles/App.css';
 import 'tailwindcss/tailwind.css';
 
@@ -14,11 +14,25 @@ function App() {
 
   // Check for user authentication
   useEffect(() => {
-    // In a real implementation, you'd check for authentication tokens here
-    // For now, we'll simulate a logged-in user
-    const mockUser = { id: 'user123', name: 'Demo User' };
-    setUser(mockUser);
-    setLoading(false);
+    const initializeAuth = async () => {
+      // Try to get a token for the demo user
+      try {
+        await getTokenForUser('user123');
+
+        // Set the mock user
+        const mockUser = { id: 'user123', name: 'Demo User' };
+        setUser(mockUser);
+      } catch (error) {
+        console.error('Error initializing authentication:', error);
+        // Still set the mock user but log the error
+        const mockUser = { id: 'user123', name: 'Demo User' };
+        setUser(mockUser);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   // Load tasks from backend when component mounts

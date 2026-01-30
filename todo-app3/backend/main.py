@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
-from src.api.chat_endpoint import router as api_router
+from src.api.chat_endpoint import router as chat_router
+from src.api.auth_endpoint import router as auth_router
 from src.middleware.auth_middleware import JWTBearer
 
 # Load environment variables
@@ -19,7 +20,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=["https://hackathon-ii-q4-phase-3-git-002-fr-3daef0-atiasultanis-projects.vercel.app/"], # In production, specify exact origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,7 +30,8 @@ app.add_middleware(
 jwt_bearer = JWTBearer()
 
 # Include API routes
-app.include_router(api_router)
+app.include_router(chat_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 # Add a basic health check endpoint
 @app.get("/")
