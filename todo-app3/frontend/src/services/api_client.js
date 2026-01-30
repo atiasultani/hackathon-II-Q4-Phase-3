@@ -1,16 +1,23 @@
 // API client for communicating with the backend
-const API_BASE_URL ="https://asultani-todo3.hf.space";
+const API_BASE_URL = 'http://localhost:7860'; // Updated to match the backend server
 
 /**
  * Send a message to the chat endpoint
  */
 export const sendMessage = async (userId, message, conversationId = null) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/${userId}/chat`, {
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/${userId}/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       body: JSON.stringify({
         message,
         conversation_id: conversationId
@@ -33,11 +40,18 @@ export const sendMessage = async (userId, message, conversationId = null) => {
  */
 export const fetchTasks = async (userId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/tasks`, {
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/tasks`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
+      headers: headers
     });
 
     if (!response.ok) {
@@ -56,11 +70,18 @@ export const fetchTasks = async (userId) => {
  */
 export const updateTask = async (taskId, taskData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       body: JSON.stringify(taskData)
     });
 
@@ -80,11 +101,18 @@ export const updateTask = async (taskId, taskData) => {
  */
 export const deleteTask = async (taskId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      }
+      headers: headers
     });
 
     if (!response.ok) {
@@ -94,6 +122,37 @@ export const deleteTask = async (taskId) => {
     return await response.json();
   } catch (error) {
     console.error('Error deleting task:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a token for a specific user ID (for demo purposes)
+ */
+export const getTokenForUser = async (userId = 'user123') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/token?user_id=${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Store the token in localStorage
+    if (data.access_token) {
+      localStorage.setItem('token', data.access_token);
+      return data.access_token;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting token:', error);
     throw error;
   }
 };
