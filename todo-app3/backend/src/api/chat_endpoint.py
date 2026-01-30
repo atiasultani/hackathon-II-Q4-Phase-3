@@ -67,10 +67,13 @@ async def chat_endpoint(
         # If the authenticated user_id is not a UUID or is None, handle string IDs
         # For demo purposes with string user IDs like "user123", we'll create a deterministic UUID
         import hashlib
-        user_uuid = uuid.UUID(bytes=hashlib.md5(auth_user_id.encode()).digest()[:16] if auth_user_id else b'default_user')
+        user_uuid = UUID(bytes=hashlib.md5(auth_user_id.encode()).digest()[:16] if auth_user_id else b'default_user')
 
     # Initialize database service
     db_service = DatabaseService(session)
+
+    # Ensure user exists in the database (get or create) using the original auth_user_id string
+    user_record = db_service.get_or_create_user(auth_user_id)
 
     # Load conversation history if conversation_id is provided
     conversation = None

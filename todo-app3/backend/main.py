@@ -69,9 +69,9 @@ async def bad_request_handler(request: Request, exc: HTTPException):
     )
 
 @app.exception_handler(500)
-async def internal_error_handler(request: Request, exc: HTTPException):
+async def internal_error_handler(request: Request, exc: Exception):
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=500,
         content={
             "error": {
                 "code": "INTERNAL_ERROR",
