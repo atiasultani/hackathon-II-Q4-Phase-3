@@ -4,7 +4,7 @@ const API_BASE_URL = 'https://asultani-todo3.hf.space/api'; // Updated to match 
 /**
  * Send a message to the chat endpoint
  */
-export const sendMessage = async (userId, message, conversationId = null) => {
+export const sendMessage = async (userId="user123", message, conversationId = null) => {
   try {
     const token = localStorage.getItem('token');
     const headers = {
@@ -156,6 +156,7 @@ export const getTokenForUser = async (userId = 'user123') => {
     throw error;
   }
 };
+
 
 
 
