@@ -131,7 +131,7 @@ export const deleteTask = async (taskId) => {
  */
 export const getTokenForUser = async (userId = 'user123') => {
   try {
-    const response = await fetch(`${API_BASE_URL}/token?user_id=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/auth/token?user_id=${userId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -156,6 +156,7 @@ export const getTokenForUser = async (userId = 'user123') => {
     throw error;
   }
 };
+
 
 
 
