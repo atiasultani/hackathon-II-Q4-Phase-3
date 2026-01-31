@@ -15,7 +15,7 @@ export const sendMessage = async (userId, message, conversationId = null) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/${userId}/chat`, {
+    const response = await fetch(`${API_BASE_URL}/tasks/${userId}`, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
@@ -156,6 +156,7 @@ export const getTokenForUser = async (userId = 'user123') => {
     throw error;
   }
 };
+
 
 
 
