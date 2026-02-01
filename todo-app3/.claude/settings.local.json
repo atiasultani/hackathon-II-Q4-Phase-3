@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(.specify/scripts/bash/check-prerequisites.sh --json)"
+      "Bash(.specify/scripts/bash/check-prerequisites.sh --json)",
+      "Bash(pip install -r requirements.txt)",
+      "Bash(source venv/bin/activate)",
+      "Bash(python main.py)",
+      "Bash(python -c \"from main import app; print\\(''App imported successfully''\\)\")",
+      "Bash(netstat -tuln)"
     ]
   }
 }
