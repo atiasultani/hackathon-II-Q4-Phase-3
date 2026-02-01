@@ -1,33 +1,25 @@
 // API client for communicating with the backend
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000'; // Match backend port
+const API_BASE_URL = process.env.REACT_APP_API_URL ||
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'
+    : 'https://asultani-todo3.hf.space'); // Default to Hugging Face deployment
 
 /**
  * Send a message to the chat endpoint
  */
-export const sendMessage = async (userId, message, conversationId = null) => {
+export const sendMessage = async (userId = "user123", message, conversationId = null) => {
   try {
     const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const response = await fetch(`${API_BASE_URL}/api/${userId}/chat`, {
       method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        message,
-        conversation_id: conversationId
-      })
+      headers,
+      body: JSON.stringify({ message, conversation_id: conversationId })
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return await response.json();
   } catch (error) {
     console.error('Error sending message:', error);
@@ -38,18 +30,13 @@ export const sendMessage = async (userId, message, conversationId = null) => {
 /**
  * Fetch all tasks for a user
  */
-export const fetchTasks = async (userId) => {
+export const fetchTasks = async (userId = "user123") => {
   try {
     const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    // Use the chat endpoint to list tasks, as the backend likely handles this via chat
+    // Use the chat endpoint to list tasks, as the backend handles this via chat
     const response = await fetch(`${API_BASE_URL}/api/${userId}/chat`, {
       method: 'POST',
       headers: headers,
@@ -65,8 +52,7 @@ export const fetchTasks = async (userId) => {
 
     const data = await response.json();
 
-    // Extract tasks from the response (may vary based on backend response structure)
-    // The backend returns tasks in the response content
+    // Extract tasks from the response (backend returns tasks in the response content)
     return {
       tasks: data.tasks || [],
       response: data.response || 'Tasks retrieved successfully'
@@ -84,24 +70,20 @@ export const fetchTasks = async (userId) => {
 export const updateTask = async (taskId, taskData) => {
   try {
     const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
-      method: 'PUT',
-      headers: headers,
-      body: JSON.stringify(taskData)
+    // For now, we'll use the chat endpoint to update tasks
+    const response = await fetch(`${API_BASE_URL}/api/user123/chat`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        message: `Update task ${taskId} to ${taskData.title || 'new description'}`,
+        conversation_id: null
+      })
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return await response.json();
   } catch (error) {
     console.error('Error updating task:', error);
@@ -115,23 +97,20 @@ export const updateTask = async (taskId, taskData) => {
 export const deleteTask = async (taskId) => {
   try {
     const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
-      method: 'DELETE',
-      headers: headers
+    // For now, we'll use the chat endpoint to delete tasks
+    const response = await fetch(`${API_BASE_URL}/api/user123/chat`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        message: `Delete task with ID ${taskId}`,
+        conversation_id: null
+      })
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return await response.json();
   } catch (error) {
     console.error('Error deleting task:', error);

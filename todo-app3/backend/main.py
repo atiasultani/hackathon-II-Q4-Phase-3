@@ -93,9 +93,11 @@ async def internal_error_handler(request: Request, exc: Exception):
 # Run the application with uvicorn when executed directly
 if __name__ == "__main__":
     import uvicorn
+    # Hugging Face Spaces uses PORT environment variable
+    port = int(os.getenv("PORT", os.getenv("SPACE_PORT", 8000)))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
+        port=port,
         reload=True if os.getenv("APP_ENV") == "development" else False
     )
