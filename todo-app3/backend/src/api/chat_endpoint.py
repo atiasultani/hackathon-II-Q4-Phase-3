@@ -137,13 +137,13 @@ async def chat_endpoint(
 
             if task_details.get("title"):
                 result = add_task_tool.run(
-                    user_id=user_id,
+                    user_id=str(user_uuid),  # Use the converted UUID
                     title=task_details["title"],
                     description=task_details.get("description")
                 )
                 response_text = f"I've added the task: {result['task']['title']}"
 
-                args = {"user_id": user_id, "title": task_details["title"]}
+                args = {"user_id": str(user_uuid), "title": task_details["title"]}  # Use the converted UUID
                 if task_details.get("description"):
                     args["description"] = task_details["description"]
 
@@ -159,7 +159,7 @@ async def chat_endpoint(
 
     elif intent == IntentType.LIST_TASKS and confidence >= MIN_CONFIDENCE:
         try:
-            result = list_tasks_tool.run(user_id=user_id)
+            result = list_tasks_tool.run(user_id=str(user_uuid))  # Use the converted UUID
             tasks = result['tasks']
 
             if tasks:
@@ -170,7 +170,7 @@ async def chat_endpoint(
 
             tool_calls.append({
                 "tool_name": "list_tasks",
-                "arguments": {"user_id": user_id},
+                "arguments": {"user_id": str(user_uuid)},  # Use the converted UUID
                 "result": result
             })
         except Exception as e:
@@ -178,7 +178,7 @@ async def chat_endpoint(
 
     elif intent == IntentType.COMPLETE_TASK and confidence >= MIN_CONFIDENCE:
         try:
-            list_result = list_tasks_tool.run(user_id=user_id)
+            list_result = list_tasks_tool.run(user_id=str(user_uuid))  # Use the converted UUID
             tasks = list_result['tasks']
 
             if tasks:
@@ -186,18 +186,18 @@ async def chat_endpoint(
                 incomplete_task = next((t for t in tasks if not t['completed']), None)
 
                 if incomplete_task:
-                    complete_result = complete_task_tool.run(user_id=user_id, task_id=incomplete_task['id'])
+                    complete_result = complete_task_tool.run(user_id=str(user_uuid), task_id=incomplete_task['id'])  # Use the converted UUID
                     response_text = f"I've marked the task '{incomplete_task['title']}' as completed."
 
                     tool_calls.extend([
                         {
                             "tool_name": "list_tasks",
-                            "arguments": {"user_id": user_id},
+                            "arguments": {"user_id": str(user_uuid)},  # Use the converted UUID
                             "result": list_result
                         },
                         {
                             "tool_name": "complete_task",
-                            "arguments": {"user_id": user_id, "task_id": incomplete_task['id']},
+                            "arguments": {"user_id": str(user_uuid), "task_id": incomplete_task['id']},  # Use the converted UUID
                             "result": complete_result
                         }
                     ])
@@ -210,7 +210,7 @@ async def chat_endpoint(
 
     elif intent == IntentType.UPDATE_TASK and confidence >= MIN_CONFIDENCE:
         try:
-            list_result = list_tasks_tool.run(user_id=user_id)
+            list_result = list_tasks_tool.run(user_id=str(user_uuid))  # Use the converted UUID
             tasks = list_result['tasks']
 
             if tasks:
@@ -231,7 +231,7 @@ async def chat_endpoint(
                 if new_content:
                     # Determine if this is a title or description update
                     update_result = update_task_tool.run(
-                        user_id=user_id,
+                        user_id=str(user_uuid),  # Use the converted UUID
                         task_id=task_to_update['id'],
                         title=new_content.capitalize() if new_content else None
                     )
@@ -241,12 +241,12 @@ async def chat_endpoint(
                     tool_calls.extend([
                         {
                             "tool_name": "list_tasks",
-                            "arguments": {"user_id": user_id},
+                            "arguments": {"user_id": str(user_uuid)},  # Use the converted UUID
                             "result": list_result
                         },
                         {
                             "tool_name": "update_task",
-                            "arguments": {"user_id": user_id, "task_id": task_to_update['id'], "title": new_content.capitalize()},
+                            "arguments": {"user_id": str(user_uuid), "task_id": task_to_update['id'], "title": new_content.capitalize()},  # Use the converted UUID
                             "result": update_result
                         }
                     ])
@@ -259,7 +259,7 @@ async def chat_endpoint(
 
     elif intent == IntentType.DELETE_TASK and confidence >= MIN_CONFIDENCE:
         try:
-            list_result = list_tasks_tool.run(user_id=user_id)
+            list_result = list_tasks_tool.run(user_id=str(user_uuid))  # Use the converted UUID
             tasks = list_result['tasks']
 
             if tasks:
@@ -279,7 +279,7 @@ async def chat_endpoint(
 
                 # Delete the task
                 delete_result = delete_task_tool.run(
-                    user_id=user_id,
+                    user_id=str(user_uuid),  # Use the converted UUID
                     task_id=target_task['id']
                 )
 
@@ -288,12 +288,12 @@ async def chat_endpoint(
                 tool_calls.extend([
                     {
                         "tool_name": "list_tasks",
-                        "arguments": {"user_id": user_id},
+                        "arguments": {"user_id": str(user_uuid)},  # Use the converted UUID
                         "result": list_result
                     },
                     {
                         "tool_name": "delete_task",
-                        "arguments": {"user_id": user_id, "task_id": target_task['id']},
+                        "arguments": {"user_id": str(user_uuid), "task_id": target_task['id']},  # Use the converted UUID
                         "result": delete_result
                     }
                 ])

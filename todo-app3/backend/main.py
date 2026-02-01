@@ -20,7 +20,17 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://hackathon-ii-q4-phase-3-git-002-fr-3daef0-atiasultanis-projects.vercel.app/"], # In production, specify exact origins
+    allow_origins=[
+        "http://localhost:3000",  # React dev server
+        "http://localhost:8000",  # Backend server
+        "http://127.0.0.1:8000",  # Alternative localhost
+        "http://localhost:5173",  # Vite dev server
+        "http://127.0.0.1:5173",  # Alternative Vite dev server
+        "https://*.vercel.app",    # Vercel deployments
+        "https://*.netlify.app",   # Netlify deployments
+        "https://*.github.io",     # GitHub Pages
+        "*"  # In development only - restrict in production
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

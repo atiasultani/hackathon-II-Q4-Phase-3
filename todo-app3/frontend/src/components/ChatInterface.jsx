@@ -48,24 +48,44 @@ const ChatInterface = ({ userId }) => {
     setIsLoading(true);
 
     try {
-      // Call the backend API
+      // Use the API client service instead of direct axios
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const token = localStorage.getItem('token');
 
-  const response = await axios.post(`http://127.0.0.1:8000/api/${userId}/chat`, {
-  message: inputValue,
-  conversation_id: conversationId
-});
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/${userId}/chat`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          message: inputValue,
+          conversation_id: conversationId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
 
       const aiMessage = {
         id: `ai-${Date.now()}`,
         role: 'assistant',
-        content: response.data.response || 'I processed your request.',
+        content: data.response || 'I processed your request.',
         timestamp: new Date().toISOString()
       };
 
       setMessages(prev => [...prev, aiMessage]);
 
-      if (response.data.conversation_id && !conversationId) {
-        setConversationId(response.data.conversation_id);
+      if (data.conversation_id && !conversationId) {
+        setConversationId(data.conversation_id);
       }
     } catch (error) {
       console.error('Error sending message:', error);

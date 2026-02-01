@@ -15,13 +15,16 @@ function App() {
   // Check for user authentication
   useEffect(() => {
     const initializeAuth = async () => {
-      // Try to get a token for the demo user
       try {
-        await getTokenForUser('user123');
+        // Try to get a token for the demo user
+        const token = await getTokenForUser('user123');
 
         // Set the mock user
         const mockUser = { id: 'user123', name: 'Demo User' };
         setUser(mockUser);
+
+        // Store token in state if needed elsewhere
+        localStorage.setItem('currentUserId', 'user123');
       } catch (error) {
         console.error('Error initializing authentication:', error);
         // Still set the mock user but log the error
