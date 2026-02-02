@@ -4,7 +4,7 @@ from uuid import UUID
 import json
 from datetime import datetime
 
-from ..middleware.auth_middleware import JWTBearer, verify_token_owner
+from ..middleware.auth_middleware import JWTBearer, verify_token_owner, JWTBearerCookie
 from ..middleware.rate_limit_middleware import rate_limit_middleware
 from ..services.database_service import DatabaseService
 from ..utils.database import get_session
@@ -16,30 +16,29 @@ from ..nlp.intent_classifier import IntentClassifier, IntentType, get_intent_and
 router = APIRouter()
 
 
-@router.post("/{user_id}/chat")
+@router.post("/chat")
 async def chat_endpoint(
     request: Request,
-    user_id: str,
     message_data: Dict[str, Any],
-    token: str = Depends(JWTBearer()),
+    token: str = Depends(JWTBearerCookie(auto_error=True)),  # Updated to use cookie-based auth
     session: Session = Depends(get_session)
 ):
     """
     Chat endpoint that handles user messages and returns AI-generated responses with tool calls
 
     Args:
-        user_id: The ID of the authenticated user making the request
         message_data: Dictionary containing conversation_id (optional) and message (required)
 
     Returns:
         Dictionary containing conversation_id, response, and tool_calls
     """
-    # Verify that the authenticated user matches the user_id in the path
+    # Get the authenticated user ID from the JWT token (no need to verify against path parameter anymore)
     authenticated_user_id = getattr(request.state, 'user_id', None)
-    if authenticated_user_id != user_id:
+
+    if not authenticated_user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not have permission to access this conversation"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
         )
 
     # Apply rate limiting
@@ -55,25 +54,20 @@ async def chat_endpoint(
             detail="Message is required"
         )
 
-    # Convert user_id to UUID for database operations
-    # Since authentication has passed, we can use the authenticated user_id
-    # First, try to use the authenticated user_id from the request state
-    auth_user_id = getattr(request.state, 'user_id', None)
-
     # Convert the authenticated user_id to UUID for database operations
     try:
-        user_uuid = UUID(auth_user_id)
+        user_uuid = UUID(authenticated_user_id)
     except (ValueError, TypeError, AttributeError):
         # If the authenticated user_id is not a UUID or is None, handle string IDs
         # For demo purposes with string user IDs like "user123", we'll create a deterministic UUID
         import hashlib
-        user_uuid = UUID(bytes=hashlib.md5(auth_user_id.encode()).digest()[:16] if auth_user_id else b'default_user')
+        user_uuid = UUID(bytes=hashlib.md5(authenticated_user_id.encode()).digest()[:16] if authenticated_user_id else b'default_user')
 
     # Initialize database service
     db_service = DatabaseService(session)
 
-    # Ensure user exists in the database (get or create) using the original auth_user_id string
-    user_record = db_service.get_or_create_user(auth_user_id)
+    # Ensure user exists in the database (get or create) using the authenticated user_id string
+    user_record = db_service.get_or_create_user(authenticated_user_id)
 
     # Load conversation history if conversation_id is provided
     conversation = None

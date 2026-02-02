@@ -3,6 +3,7 @@ from typing import List, Optional
 from ..models import Task, Conversation, Message, User
 from uuid import UUID
 import hashlib
+from ..utils.password_utils import hash_password, verify_password
 
 
 class DatabaseService:
@@ -159,6 +160,48 @@ class DatabaseService:
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def create_user(self, email: str, password: str, username: Optional[str] = None) -> User:
+        """Create a new user with email, password, and optional username"""
+        # Check if user with this email already exists
+        existing_user = self.get_user_by_email(email)
+        if existing_user:
+            raise ValueError("User with this email already exists")
+
+        # Hash the password
+        hashed_password = hash_password(password)
+
+        # Create a new user with a random UUID
+        user = User(
+            email=email,
+            username=username or email.split('@')[0],  # Use email prefix as username if not provided
+            password_hash=hashed_password
+        )
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        """Get a user by their email address"""
+        user_query = select(User).where(User.email == email)
+        return self.session.exec(user_query).first()
+
+    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+        """Get a user by their UUID"""
+        user_query = select(User).where(User.id == user_id)
+        return self.session.exec(user_query).first()
+
+    def authenticate_user(self, email: str, password: str) -> Optional[User]:
+        """Authenticate a user by email and password"""
+        user = self.get_user_by_email(email)
+        if not user:
+            return None
+
+        if verify_password(password, user.password_hash):
+            return user
+
+        return None
 
     def cleanup_old_conversations(self, days_old: int = 730) -> int:  # 730 days = 2 years
         """Clean up conversations older than specified days (retention policy)"""

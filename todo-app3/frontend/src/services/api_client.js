@@ -7,16 +7,15 @@ const API_BASE_URL = process.env.REACT_APP_API_URL ||
 /**
  * Send a message to the chat endpoint
  */
-export const sendMessage = async (userId = "user123", message, conversationId = null) => {
+export const sendMessage = async (message, conversationId = null) => {
   try {
-    const token = localStorage.getItem('token');
     const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const response = await fetch(`${API_BASE_URL}/api/${userId}/chat`, {
+    const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ message, conversation_id: conversationId })
+      body: JSON.stringify({ message, conversation_id: conversationId }),
+      credentials: 'include'  // Include cookies in requests
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -30,20 +29,19 @@ export const sendMessage = async (userId = "user123", message, conversationId = 
 /**
  * Fetch all tasks for a user
  */
-export const fetchTasks = async (userId = "user123") => {
+export const fetchTasks = async () => {
   try {
-    const token = localStorage.getItem('token');
     const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
 
     // Use the chat endpoint to list tasks, as the backend handles this via chat
-    const response = await fetch(`${API_BASE_URL}/api/${userId}/chat`, {
+    const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
         message: "list my tasks",
         conversation_id: null
-      })
+      }),
+      credentials: 'include'  // Include cookies in requests
     });
 
     if (!response.ok) {
@@ -69,18 +67,17 @@ export const fetchTasks = async (userId = "user123") => {
  */
 export const updateTask = async (taskId, taskData) => {
   try {
-    const token = localStorage.getItem('token');
     const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
 
     // For now, we'll use the chat endpoint to update tasks
-    const response = await fetch(`${API_BASE_URL}/api/user123/chat`, {
+    const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
         message: `Update task ${taskId} to ${taskData.title || 'new description'}`,
         conversation_id: null
-      })
+      }),
+      credentials: 'include'  // Include cookies in requests
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -96,18 +93,17 @@ export const updateTask = async (taskId, taskData) => {
  */
 export const deleteTask = async (taskId) => {
   try {
-    const token = localStorage.getItem('token');
     const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
 
     // For now, we'll use the chat endpoint to delete tasks
-    const response = await fetch(`${API_BASE_URL}/api/user123/chat`, {
+    const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
         message: `Delete task with ID ${taskId}`,
         conversation_id: null
-      })
+      }),
+      credentials: 'include'  // Include cookies in requests
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -119,59 +115,103 @@ export const deleteTask = async (taskId) => {
 };
 
 /**
- * Get a token for a specific user ID (for demo purposes)
+ * Login with email and password
  */
-export const getTokenForUser = async (userId = 'user123') => {
+export const login = async (email, password) => {
   try {
-    // Try the login endpoint first
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ user_id: userId })
+      body: JSON.stringify({ email, password }),
+      credentials: 'include'  // Include cookies in requests
     });
 
     if (!response.ok) {
-      // If login endpoint doesn't exist, try the token endpoint
-      const tokenResponse = await fetch(`${API_BASE_URL}/api/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ user_id: userId })
-      });
-
-      if (!tokenResponse.ok) {
-        // Fallback for development - create a simple token
-        const token = 'demo-token-' + userId + '-' + Date.now();
-        localStorage.setItem('token', token);
-        return token;
-      }
-
-      const data = await tokenResponse.json();
-
-      if (data.access_token) {
-        localStorage.setItem('token', data.access_token);
-        return data.access_token;
-      }
-      return null;
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Login failed');
     }
 
-    const data = await response.json();
-
-    // Store the token in localStorage
-    if (data.access_token) {
-      localStorage.setItem('token', data.access_token);
-      return data.access_token;
-    }
-
-    return null;
+    // No need to store token in localStorage as it's in HttpOnly cookie
+    return await response.json();
   } catch (error) {
-    console.error('Error getting token:', error);
-    // Fallback for development
-    const fallbackToken = 'fallback-token-' + userId + '-' + Date.now();
-    localStorage.setItem('token', fallbackToken);
-    return fallbackToken;
+    console.error('Error logging in:', error);
+    throw error;
+  }
+};
+
+/**
+ * Signup with email and password
+ */
+export const signup = async (email, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+      credentials: 'include'  // Include cookies in requests
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Signup failed');
+    }
+
+    // No need to store token in localStorage as it's in HttpOnly cookie
+    return await response.json();
+  } catch (error) {
+    console.error('Error signing up:', error);
+    throw error;
+  }
+};
+
+/**
+ * Logout the user
+ */
+export const logout = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'  // Include cookies in requests
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Logout failed');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error logging out:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get current user info
+ */
+export const getCurrentUser = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      method: 'GET',
+      credentials: 'include'  // Include cookies in requests
+    });
+
+    if (!response.ok) {
+      // Throw error with status code to help identify unauthorized access
+      const errorData = await response.json().catch(() => ({})); // In case response is not JSON
+      const errorMessage = errorData.detail || `HTTP error! status: ${response.status}`;
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      throw error;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting user info:', error);
+    throw error;
   }
 };
