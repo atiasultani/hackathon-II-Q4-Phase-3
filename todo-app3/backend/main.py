@@ -41,7 +41,7 @@ jwt_bearer = JWTBearer()
 
 # Include API routes
 app.include_router(chat_router, prefix="/api")
-app.include_router(auth_router, prefix="/api")
+app.include_router(auth_router, prefix="/api/auth")
 
 # Add a basic health check endpoint
 @app.get("/")

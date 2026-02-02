@@ -10,9 +10,11 @@
 ### Backend Configuration
 1. Ensure JWT secret is configured in environment variables
 2. Verify authentication endpoints are available:
-   - `/api/token` - for obtaining tokens
-   - `/api/login` - for credential-based login
-3. Confirm protected endpoints require authentication
+   - `/api/auth/signup` - for user registration
+   - `/api/auth/login` - for credential-based login
+   - `/api/auth/logout` - for user logout
+   - `/api/auth/me` - for getting current user info
+3. Confirm authentication cookies are properly handled
 
 ### Frontend Configuration
 1. Configure API base URL to point to backend
@@ -21,29 +23,60 @@
 
 ## Usage Steps
 
-### 1. Obtain Authentication Token
+### 1. User Registration/Login
 ```javascript
-// Get token for a specific user
-const token = await getTokenForUser('user123');
+// Register a new user
+const signupResponse = await fetch('/api/auth/signup', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'user@example.com', password: 'SecurePassword123!' })
+});
+
+// Or login an existing user
+const loginResponse = await fetch('/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'user@example.com', password: 'SecurePassword123!' })
+});
 ```
 
 ### 2. Make Authenticated Requests
 ```javascript
-// API client automatically includes Authorization header
-const response = await sendMessage(userId, message);
+// API client automatically includes authentication cookies
+// No need to manually manage tokens - handled via HttpOnly cookies
+const response = await fetch('/api/chat', {
+  method: 'POST',
+  credentials: 'include',  // Include authentication cookies
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message: 'Hello', conversation_id: null })
+});
 ```
 
-### 3. Handle Token Expiration
-- Monitor token expiration time
-- Refresh token before expiration
-- Redirect to login if token becomes invalid
+### 3. Get Current User Information
+```javascript
+// Get current authenticated user info
+const userResponse = await fetch('/api/auth/me', {
+  method: 'GET',
+  credentials: 'include'  // Include authentication cookies
+});
+```
+
+### 4. Logout
+```javascript
+// Clear authentication
+const logoutResponse = await fetch('/api/auth/logout', {
+  method: 'POST',
+  credentials: 'include'  // Include authentication cookies
+});
+```
 
 ## Testing the Integration
 
 ### Manual Testing
-1. Call `/api/token?user_id=user123` to get a token
-2. Use the token in Authorization header for protected endpoints
-3. Verify that requests without tokens return 401/403
+1. Call `/api/auth/signup` to register a new user
+2. Call `/api/auth/login` to authenticate the user
+3. Call `/api/auth/me` to verify authentication is working
+4. Verify that authentication cookies are properly set and included in subsequent requests
 
 ### Expected Results
 - Successful authentication returns valid JWT token
@@ -53,11 +86,12 @@ const response = await sendMessage(userId, message);
 ## Troubleshooting
 
 ### Common Issues
-- **403 Forbidden**: Token doesn't match user_id in request
-- **401 Unauthorized**: Invalid or expired token
+- **401 Unauthorized**: User not authenticated or session expired
+- **403 Forbidden**: Insufficient permissions (though not commonly used in this implementation)
 - **Network Error**: Backend server not accessible
+- **Missing Cookies**: Credentials not being sent with requests
 
 ### Verification Steps
-1. Check that token was properly obtained and stored
-2. Verify Authorization header format: `Bearer {token}`
-3. Confirm user_id in URL matches user_id in token
+1. Check that authentication cookies are properly set after login
+2. Verify that `credentials: 'include'` is used in fetch requests to send cookies
+3. Confirm authentication endpoints are accessible at `/api/auth/*` paths

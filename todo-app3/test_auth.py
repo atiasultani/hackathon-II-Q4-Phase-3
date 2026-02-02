@@ -18,7 +18,7 @@ async def test_auth_system():
 
         print(f"\n1. Testing Signup with email: {test_email}")
         signup_response = await client.post(
-            f"{BASE_URL}/api/signup",
+            f"{BASE_URL}/api/auth/signup",
             json={"email": test_email, "password": test_password}
         )
         print(f"Signup response: {signup_response.status_code}")
@@ -30,7 +30,7 @@ async def test_auth_system():
 
         print("\n2. Testing Login with the same credentials")
         login_response = await client.post(
-            f"{BASE_URL}/api/login",
+            f"{BASE_URL}/api/auth/login",
             json={"email": test_email, "password": test_password}
         )
         print(f"Login response: {login_response.status_code}")
@@ -40,7 +40,7 @@ async def test_auth_system():
             return False
 
         print("\n3. Testing /me endpoint to get user info")
-        me_response = await client.get(f"{BASE_URL}/api/me")
+        me_response = await client.get(f"{BASE_URL}/api/auth/me")
         print(f"Me response: {me_response.status_code}")
         if me_response.status_code == 200:
             user_info = me_response.json()
@@ -62,7 +62,7 @@ async def test_auth_system():
             print(f"Chat endpoint failed: {chat_response.text}")
 
         print("\n5. Testing Logout")
-        logout_response = await client.post(f"{BASE_URL}/api/logout")
+        logout_response = await client.post(f"{BASE_URL}/api/auth/logout")
         print(f"Logout response: {logout_response.status_code}")
         print(f"Cookies after logout: {dict(client.cookies)}")
 
@@ -71,7 +71,7 @@ async def test_auth_system():
             return False
 
         print("\n6. Testing /me endpoint after logout (should fail)")
-        me_after_logout = await client.get(f"{BASE_URL}/api/me")
+        me_after_logout = await client.get(f"{BASE_URL}/api/auth/me")
         print(f"Me after logout: {me_after_logout.status_code} (expected: 401)")
 
         print("\n✓ All tests passed! Authentication system is working correctly.")

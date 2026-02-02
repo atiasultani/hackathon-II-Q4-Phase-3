@@ -2,40 +2,14 @@
 
 ## Authentication Endpoints
 
-### POST /api/token
-**Description**: Obtain authentication token for a user
+### POST /api/auth/signup
+**Description**: Register a new user with email and password
 **Authentication**: None (public endpoint)
 
 **Request**:
 ```json
 {
-  "user_id": "string"
-}
-```
-
-**Query Parameters**:
-- user_id: String identifier for the user requesting a token
-
-**Response (200 OK)**:
-```json
-{
-  "access_token": "string",
-  "token_type": "string"
-}
-```
-
-**Error Responses**:
-- 400: Invalid request parameters
-- 404: User not found
-
-### POST /api/login
-**Description**: Authenticate user with credentials
-**Authentication**: None (public endpoint)
-
-**Request**:
-```json
-{
-  "username": "string",
+  "email": "string",
   "password": "string"
 }
 ```
@@ -43,108 +17,70 @@
 **Response (200 OK)**:
 ```json
 {
-  "access_token": "string",
-  "token_type": "string"
-}
-```
-
-## Protected Endpoints
-
-### POST /api/{user_id}/chat
-**Description**: Send chat message (requires authentication)
-**Authentication**: Bearer token required
-
-**Headers**:
-- Authorization: "Bearer {token}"
-
-**Path Parameters**:
-- user_id: String identifier for the user (must match token)
-
-**Request**:
-```json
-{
-  "message": "string",
-  "conversation_id": "string"
-}
-```
-
-**Response (200 OK)**:
-```json
-{
-  "conversation_id": "string",
-  "response": "string",
-  "tool_calls": "array"
+  "message": "User registered successfully"
 }
 ```
 
 **Error Responses**:
-- 401: Unauthorized (invalid/expired token)
-- 403: Forbidden (user mismatch or insufficient permissions)
-- 400: Bad request (invalid message format)
+- 400: Invalid request parameters or weak password
+- 409: User already exists
+- 500: Internal server error
 
-### GET /api/users/{user_id}/tasks
-**Description**: Get user's tasks (requires authentication)
-**Authentication**: Bearer token required
-
-**Headers**:
-- Authorization: "Bearer {token}"
-
-**Path Parameters**:
-- user_id: String identifier for the user (must match token)
-
-**Response (200 OK)**:
-```json
-{
-  "tasks": [
-    {
-      "id": "string",
-      "title": "string",
-      "description": "string",
-      "completed": "boolean"
-    }
-  ]
-}
-```
-
-### PUT /api/tasks/{task_id}
-**Description**: Update a task (requires authentication)
-**Authentication**: Bearer token required
-
-**Headers**:
-- Authorization: "Bearer {token}"
-
-**Path Parameters**:
-- task_id: String identifier for the task
+### POST /api/auth/login
+**Description**: Authenticate user with email and password
+**Authentication**: None (public endpoint)
 
 **Request**:
 ```json
 {
-  "title": "string",
-  "description": "string",
-  "completed": "boolean"
+  "email": "string",
+  "password": "string"
 }
 ```
-
-### DELETE /api/tasks/{task_id}
-**Description**: Delete a task (requires authentication)
-**Authentication**: Bearer token required
-
-**Headers**:
-- Authorization: "Bearer {token}"
-
-**Path Parameters**:
-- task_id: String identifier for the task
 
 **Response (200 OK)**:
 ```json
 {
-  "success": "boolean"
+  "message": "Login successful"
 }
 ```
 
+**Error Responses**:
+- 401: Incorrect email or password
+- 401: Account is deactivated
+
+### POST /api/auth/logout
+**Description**: Logout the user and clear authentication cookies
+**Authentication**: JWT token in HttpOnly cookie
+
+**Request**: Empty body
+
+**Response (200 OK)**:
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+### GET /api/auth/me
+**Description**: Get the current authenticated user's information
+**Authentication**: JWT token in HttpOnly cookie
+
+**Response (200 OK)**:
+```json
+{
+  "user_id": "string",
+  "email": "string"
+}
+```
+
+**Error Responses**:
+- 401: Not authenticated or user not found
+
 ## Security Requirements
 
-1. All protected endpoints must validate the Authorization header
-2. The user_id in the path must match the user_id in the JWT token
-3. JWT tokens must be validated for signature and expiration
-4. All sensitive data must be encrypted in transit (HTTPS)
+1. Authentication tokens are stored in HttpOnly cookies for security
+2. JWT tokens in cookies are validated for signature and expiration
+3. All sensitive data must be encrypted in transit (HTTPS)
+4. Passwords are hashed using secure hashing algorithms
+5. Authentication state is maintained through cookie-based sessions
