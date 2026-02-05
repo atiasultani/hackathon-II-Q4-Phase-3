@@ -11,28 +11,16 @@ class AuthService {
       headers: {
         'Content-Type': 'application/json',
       },
+      // Enable credentials (cookies) to be sent with requests
+      withCredentials: true
     });
-
-    // Add interceptor to include token in requests
-    this.api.interceptors.request.use(
-      (config) => {
-        const token = getToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
 
     // Add interceptor to handle token expiration
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Token might be expired, remove it
+          // Remove any stored token info
           removeToken();
         }
         return Promise.reject(error);
@@ -46,6 +34,8 @@ class AuthService {
         email,
         password
       });
+
+      // The backend sets HttpOnly cookies automatically after signup
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -58,6 +48,8 @@ class AuthService {
         email,
         password
       });
+
+      // The backend sets HttpOnly cookies automatically, so we don't need to handle tokens here
       return response.data;
     } catch (error) {
       throw this.handleError(error);

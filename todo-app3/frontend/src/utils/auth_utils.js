@@ -1,120 +1,86 @@
 /**
- * Token management utilities for authentication
+ * Authentication utilities for HttpOnly cookie-based authentication
  */
 
 /**
- * Store authentication token in localStorage
- * @param {string} token - JWT token to store
+ * Store user session info in localStorage (for UI purposes)
+ * @param {Object} userInfo - User information to store
  */
-export const storeToken = (token) => {
+export const storeUserInfo = (userInfo) => {
   if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.setItem('token', token);
+    localStorage.setItem('userInfo', JSON.stringify(userInfo));
   }
 };
 
 /**
- * Retrieve authentication token from localStorage
- * @returns {string|null} - JWT token or null if not found
+ * Retrieve user session info from localStorage
+ * @returns {Object|null} - User information or null if not found
  */
-export const getToken = () => {
+export const getUserInfo = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
-    return localStorage.getItem('token');
+    const userInfo = localStorage.getItem('userInfo');
+    return userInfo ? JSON.parse(userInfo) : null;
   }
   return null;
 };
 
 /**
- * Remove authentication token from localStorage
+ * Remove user session info from localStorage
  */
-export const removeToken = () => {
+export const removeUserInfo = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
   }
 };
 
 /**
- * Decode JWT token to get payload
- * @param {string} token - JWT token to decode
- * @returns {Object|null} - Decoded payload or null if invalid
+ * Check if user has valid session by attempting to fetch user info
+ * @returns {Promise<boolean>} - True if user has valid session, false otherwise
  */
-export const decodeToken = (token) => {
+export const isUserAuthenticated = async () => {
   try {
-    if (!token) return null;
+    // Since we can't directly access the HttpOnly cookie,
+    // we need to make an API call to check if the user is authenticated
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/me`, {
+      method: 'GET',
+      credentials: 'include', // Include cookies in the request
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
 
-    // Remove 'Bearer ' prefix if present
-    const cleanToken = token.startsWith('Bearer ') ? token.substring(7) : token;
-
-    // Split token into parts
-    const parts = cleanToken.split('.');
-    if (parts.length !== 3) {
-      return null;
-    }
-
-    // Decode payload (second part)
-    const payload = parts[1];
-    // Add padding if needed
-    const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
-    const decodedPayload = atob(paddedPayload);
-
-    return JSON.parse(decodedPayload);
+    return response.ok;
   } catch (error) {
-    console.error('Error decoding token:', error);
-    return null;
-  }
-};
-
-/**
- * Check if token is expired
- * @param {string} token - JWT token to check
- * @returns {boolean} - True if token is expired, false otherwise
- */
-export const isTokenExpired = (token) => {
-  const payload = decodeToken(token);
-  if (!payload || !payload.exp) {
-    return true; // Consider invalid tokens as expired
-  }
-
-  const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-  return payload.exp < currentTime;
-};
-
-/**
- * Get token expiration time
- * @param {string} token - JWT token to check
- * @returns {number|null} - Expiration timestamp or null if invalid
- */
-export const getTokenExpiration = (token) => {
-  const payload = decodeToken(token);
-  if (!payload || !payload.exp) {
-    return null;
-  }
-
-  return payload.exp;
-};
-
-/**
- * Validate token (check if it exists and is not expired)
- * @param {string} token - JWT token to validate
- * @returns {boolean} - True if token is valid, false otherwise
- */
-export const isValidToken = (token) => {
-  if (!token) {
+    console.error('Error checking authentication status:', error);
     return false;
   }
-
-  return !isTokenExpired(token);
 };
 
 /**
- * Get user ID from token
- * @param {string} token - JWT token to extract user ID from
- * @returns {string|null} - User ID or null if not found
+ * Store authentication token in localStorage (maintaining interface for compatibility)
+ * With HttpOnly cookies approach, this is mainly for backward compatibility
+ * @param {string} token - Token to store (though not used with HttpOnly cookies)
  */
-export const getUserIdFromToken = (token) => {
-  const payload = decodeToken(token);
-  if (!payload || !payload.user_id) {
-    return null;
-  }
+export const storeToken = (token) => {
+  // In HttpOnly cookie approach, we don't actually store the token
+  // This function is maintained for backward compatibility
+};
 
-  return payload.user_id;
+/**
+ * Retrieve authentication token from storage
+ * With HttpOnly cookies approach, this will return null as token is not accessible
+ * @returns {string|null} - Will always return null since token is in HttpOnly cookie
+ */
+export const getToken = () => {
+  // With HttpOnly cookies, we cannot access the token directly from JavaScript
+  // Return null to indicate that we use cookies instead
+  return null;
+};
+
+/**
+ * Remove authentication token/storage
+ */
+export const removeToken = () => {
+  // Remove any stored user info
+  removeUserInfo();
 };

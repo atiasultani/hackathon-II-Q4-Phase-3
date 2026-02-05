@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getToken, removeToken, isValidToken, decodeToken } from '../utils/auth_utils';
+import { getUserInfo, removeUserInfo, isUserAuthenticated } from '../utils/auth_utils';
 
 const AuthContext = createContext(null);
 
@@ -20,24 +20,44 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const token = getToken();
+        const isAuthenticated = await isUserAuthenticated();
 
-        if (token && isValidToken(token)) {
-          // Decode token to get user info
-          const decoded = decodeToken(token);
-          if (decoded) {
-            setUser({
-              id: decoded.user_id || decoded.sub,
-              email: decoded.email
-            });
+        if (isAuthenticated) {
+          // Get user info from local storage (UI convenience, not security)
+          const userInfo = getUserInfo();
+
+          if (userInfo) {
+            setUser(userInfo);
             setIsAuthenticated(true);
           } else {
-            // Token exists but is invalid, remove it
-            removeToken();
-            setIsAuthenticated(false);
+            // If authenticated but no local info, fetch from API
+            try {
+              const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/me`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json',
+                }
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                const userData = {
+                  id: data.user.id || data.user_id,
+                  email: data.user.email || data.email
+                };
+
+                setUser(userData);
+                setIsAuthenticated(true);
+              } else {
+                setIsAuthenticated(false);
+              }
+            } catch (fetchError) {
+              console.error('Error fetching user info:', fetchError);
+              setIsAuthenticated(false);
+            }
           }
         } else {
-          // No valid token
           setIsAuthenticated(false);
         }
       } catch (error) {
@@ -56,10 +76,24 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    removeToken();
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      // Call logout API to clear server-side session/cookies
+      await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Clear local storage regardless of API success
+      removeUserInfo();
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   const value = {

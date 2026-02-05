@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { storeToken } from '../../utils/auth_utils';
-import axios from 'axios';
-import './../styles/Auth.css';
+import authService from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
+import './../../styles/Auth.css';
 
 const Signin = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +12,7 @@ const Signin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth(); // Access login function from AuthContext
 
   const handleChange = (e) => {
     setFormData({
@@ -26,31 +27,26 @@ const Signin = () => {
     setError('');
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/login`, {
-        email: formData.email,
-        password: formData.password
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await authService.signin(formData.email, formData.password);
 
-      if (response.data.access_token) {
-        storeToken(response.data.access_token);
-        // Redirect to dashboard or home page after successful login
-        navigate('/');
-      } else {
-        setError('Login successful but no token received');
+      // Since the backend uses HttpOnly cookies, we need to fetch user data separately
+      try {
+        const userData = await authService.getCurrentUser();
+        // Update auth context with user info
+        login({
+          id: userData.user.id || userData.user_id,
+          email: userData.user.email || userData.email
+        });
+      } catch (userErr) {
+        console.warn('Could not fetch user data after login:', userErr);
+        // Still redirect even if we couldn't get user data
       }
+
+      // Redirect to dashboard or home page after successful login
+      navigate('/');
     } catch (err) {
       console.error('Login error:', err);
-      if (err.response) {
-        setError(err.response.data.detail || 'Invalid credentials. Please try again.');
-      } else if (err.request) {
-        setError('Network error. Please check your connection.');
-      } else {
-        setError('An error occurred. Please try again.');
-      }
+      setError(err.message || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }

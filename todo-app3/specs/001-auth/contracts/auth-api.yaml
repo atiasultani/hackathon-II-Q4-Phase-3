@@ -1,0 +1,254 @@
+# API Contract: Authentication and Security Service
+
+## Base URL
+```
+https://api.yourapp.com
+```
+
+## Authentication API
+
+### POST /api/auth/register
+
+Register a new user account with secure authentication.
+
+#### Request
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!",
+  "username": "john_doe"
+}
+```
+
+#### Headers
+```
+Content-Type: application/json
+```
+
+#### Response Codes
+- 201: User registered successfully
+- 400: Validation error (invalid email format, weak password)
+- 409: Email already exists
+- 500: Internal server error
+
+#### Success Response (201)
+```json
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "email": "user@example.com",
+    "username": "john_doe"
+  }
+}
+```
+
+#### Error Response (400)
+```json
+{
+  "error": "Validation failed",
+  "details": {
+    "email": "Invalid email format",
+    "password": "Password must be at least 8 characters with uppercase, lowercase, and number"
+  }
+}
+```
+
+#### Error Response (409)
+```json
+{
+  "error": "Conflict",
+  "message": "Email already exists"
+}
+```
+
+### POST /api/auth/login
+
+Authenticate a user and return an access token.
+
+#### Request
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+```
+
+#### Headers
+```
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Authentication successful
+- 400: Missing fields
+- 401: Invalid credentials or account locked
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "email": "user@example.com",
+    "username": "john_doe"
+  },
+  "expiresIn": 3600
+}
+```
+
+#### Error Response (401)
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid credentials or account temporarily locked"
+}
+```
+
+### POST /api/auth/logout
+
+Logout the current user and invalidate the session.
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Successfully signed out
+- 401: Unauthorized (invalid/expired token)
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "message": "Successfully signed out"
+}
+```
+
+### GET /api/auth/me
+
+Get the current authenticated user's profile information.
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: User data retrieved successfully
+- 401: Unauthorized (invalid/expired token)
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "email": "user@example.com",
+    "username": "john_doe",
+    "createdAt": "2023-01-15T10:30:00Z",
+    "lastLoginAt": "2023-02-01T15:45:00Z"
+  }
+}
+```
+
+## User Data Isolation Endpoints
+
+### GET /api/tasks
+
+Retrieve only the authenticated user's tasks.
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Tasks retrieved successfully
+- 401: Unauthorized (invalid/expired token)
+- 403: Forbidden (user tried to access other user's data)
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "tasks": [
+    {
+      "id": "t1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "title": "Buy groceries",
+      "description": "Milk, eggs, bread",
+      "completed": false,
+      "createdAt": "2023-02-01T10:30:00Z",
+      "updatedAt": "2023-02-01T10:30:00Z"
+    }
+  ]
+}
+```
+
+### GET /api/conversations
+
+Retrieve only the authenticated user's conversations.
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Conversations retrieved successfully
+- 401: Unauthorized (invalid/expired token)
+- 403: Forbidden (attempted to access other user's conversations)
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "conversations": [
+    {
+      "id": "c1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "title": "Shopping List",
+      "createdAt": "2023-02-01T09:15:00Z",
+      "updatedAt": "2023-02-01T10:30:00Z"
+    }
+  ]
+}
+```
+
+## Security
+
+### JWT Token Format
+Access tokens follow the JWT standard with these claims:
+- `sub`: User ID (subject)
+- `exp`: Expiration time (Unix timestamp)
+- `iat`: Issued at time (Unix timestamp)
+- `jti`: JWT ID for potential revocation
+
+### Rate Limiting
+- Authentication endpoints are limited to 10 attempts per IP per minute
+- Exceeding limits results in temporary IP blocking
+- MCP tool access is limited to prevent abuse
+
+### Password Requirements
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one numeric digit
+- At least one special character (recommended)
+
+### Input Validation
+- Email format validation using standard regex
+- Password strength validation
+- Sanitization of all inputs to prevent injection attacks
+- User ID validation to prevent access to other users' data
+
+### Data Isolation
+- All queries include user_id filter to prevent cross-user data access
+- Foreign key relationships enforce ownership at the database level
+- API endpoints validate user_id matches token user_id
+- Error responses don't leak information about other users' data
