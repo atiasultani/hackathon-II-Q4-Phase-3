@@ -5,7 +5,6 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { ChatKitProvider } from "@chatkit/react";
 import { optimizeAnimationForDevice } from "../utils/animation-utils";
 
 // Define types
@@ -101,14 +100,9 @@ export const UserPreferencesProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   return (
-    <ChatKitProvider
-      publicKey="domain_pk_698410923bb0819590e60af8bbeee46a08c8da1bd8601a5b"
-      domain="asultani-todo3.hf.space"
-    >
-      <UserPreferencesContext.Provider value={contextValue}>
-        {children}
-      </UserPreferencesContext.Provider>
-    </ChatKitProvider>
+    <UserPreferencesContext.Provider value={contextValue}>
+      {children}
+    </UserPreferencesContext.Provider>
   );
 };
 

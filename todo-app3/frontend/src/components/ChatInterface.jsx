@@ -50,23 +50,19 @@ const ChatInterface = ({ userId }) => {
     try {
       // Use the API client service instead of direct axios
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const token = localStorage.getItem('token');
 
       const headers = {
         'Content-Type': 'application/json',
       };
 
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/${userId}/chat`, {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
           message: inputValue,
           conversation_id: conversationId
-        })
+        }),
+        credentials: 'include'  // Include cookies for authentication
       });
 
       if (!response.ok) {

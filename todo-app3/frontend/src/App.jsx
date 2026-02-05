@@ -1,61 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserPreferencesProvider } from './context/UserPreferencesContext';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 import { getCurrentUser } from './services/api_client';
 import './styles/App.css';
 import './styles/Auth.css';
 import 'tailwindcss/tailwind.css';
-
-// Protected route component
-const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(null);
-
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await getCurrentUser();
-        setIsAuthenticated(true);
-      } catch (error) {
-        setIsAuthenticated(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  if (isAuthenticated === null) {
-    return <div className="app-loading"><h2>Checking authentication...</h2></div>;
-  }
-
-  return isAuthenticated ? children : <Navigate to="/login" />;
-};
-
-// Public route component (redirects if already logged in)
-const PublicRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(null);
-
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await getCurrentUser();
-        setIsAuthenticated(true);
-      } catch (error) {
-        setIsAuthenticated(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  if (isAuthenticated === null) {
-    return <div className="app-loading"><h2>Checking authentication...</h2></div>;
-  }
-
-  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
-};
 
 function App() {
   return (

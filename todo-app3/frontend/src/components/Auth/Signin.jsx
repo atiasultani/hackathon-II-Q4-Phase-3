@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { storeToken } from '../../utils/auth_utils';
-import axios from 'axios';
+import { login, getCurrentUser } from '../../services/api_client';
+import { useAuth } from '../../contexts/AuthContext';
 import './../styles/Auth.css';
 
 const Signin = () => {
@@ -12,6 +12,7 @@ const Signin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth(); // Use the login function from auth context
 
   const handleChange = (e) => {
     setFormData({
@@ -26,31 +27,28 @@ const Signin = () => {
     setError('');
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/auth/login`, {
-        email: formData.email,
-        password: formData.password
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Use the authentication service instead of direct API call
+      const response = await login(formData.email, formData.password);
 
-      if (response.data.access_token) {
-        storeToken(response.data.access_token);
-        // Redirect to dashboard or home page after successful login
-        navigate('/');
-      } else {
-        setError('Login successful but no token received');
+      // The login service handles HttpOnly cookie storage automatically
+      // Now get user information to update the auth context
+      try {
+        const userData = await getCurrentUser();
+        // Update auth context with user info
+        login({
+          id: userData.user_id || userData.id,
+          email: userData.email || formData.email
+        });
+      } catch (userErr) {
+        console.warn('Could not fetch user data after login:', userErr);
+        // Still redirect even if we couldn't get user data
       }
+
+      // Redirect to dashboard or home page after successful login
+      navigate('/');
     } catch (err) {
       console.error('Login error:', err);
-      if (err.response) {
-        setError(err.response.data.detail || 'Invalid credentials. Please try again.');
-      } else if (err.request) {
-        setError('Network error. Please check your connection.');
-      } else {
-        setError('An error occurred. Please try again.');
-      }
+      setError(err.message || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }

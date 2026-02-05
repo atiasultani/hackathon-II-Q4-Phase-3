@@ -4,7 +4,9 @@ from jose import JWTError, jwt
 from typing import Optional
 from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from jose import JWTError
 
 load_dotenv()
 
@@ -16,6 +18,22 @@ JWT_EXPIRATION_DELTA = int(os.getenv("JWT_EXPIRATION_DELTA", "86400"))  # 24 hou
 class JWTBearer(HTTPBearer):
     def __init__(self, auto_error: bool = True):
         super(JWTBearer, self).__init__(auto_error=auto_error)
+
+    def verify_jwt(self, token: str) -> Optional[str]:
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
+            # Use 'sub' field for user UUID as per spec, fallback to 'user_id' for backward compatibility
+            user_uuid: str = payload.get("sub") or payload.get("user_id")
+
+            # Check if token is expired
+            exp = payload.get("exp")
+            if exp and datetime.utcnow().timestamp() > exp:
+                return None
+
+            return user_uuid
+        except JWTError:
+            return None
 
     async def __call__(self, request: Request):
         credentials: Optional[HTTPAuthorizationCredentials] = await super(JWTBearer, self).__call__(request)
@@ -94,6 +112,9 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str =
     """
     Set authentication cookies with secure settings
     """
+    # Calculate expiration time based on JWT settings
+    expiration_seconds = int(os.getenv("JWT_EXPIRATION_DELTA", "86400"))  # 24 hours default
+
     # Set access token cookie
     response.set_cookie(
         key="access_token",
@@ -101,19 +122,21 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str =
         httponly=True,
         secure=os.getenv("ENVIRONMENT", "development") == "production",  # Secure in production
         samesite="lax",  # Lax same-site policy for CSRF protection
-        max_age=JWT_EXPIRATION_DELTA  # Match token expiration
+        max_age=expiration_seconds,  # Match token expiration
+        path="/"
     )
 
     # Set refresh token cookie if provided
     if refresh_token:
-        REFRESH_EXPIRATION_DELTA = int(os.getenv("REFRESH_EXPIRATION_DELTA", "604800"))  # 7 days default
+        refresh_expiration_seconds = int(os.getenv("REFRESH_EXPIRATION_DELTA", "604800"))  # 7 days default
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
             secure=os.getenv("ENVIRONMENT", "development") == "production",  # Secure in production
             samesite="lax",  # Lax same-site policy for CSRF protection
-            max_age=REFRESH_EXPIRATION_DELTA
+            max_age=refresh_expiration_seconds,  # Refresh token expiration
+            path="/"
         )
 
 
@@ -121,24 +144,8 @@ def clear_auth_cookies(response: Response):
     """
     Clear authentication cookies
     """
-    response.delete_cookie(key="access_token")
-    response.delete_cookie(key="refresh_token")
-
-    def verify_jwt(self, token: str) -> Optional[str]:
-        try:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-
-            # Use 'sub' field for user UUID as per spec, fallback to 'user_id' for backward compatibility
-            user_uuid: str = payload.get("sub") or payload.get("user_id")
-
-            # Check if token is expired
-            exp = payload.get("exp")
-            if exp and datetime.utcnow().timestamp() > exp:
-                return None
-
-            return user_uuid
-        except JWTError:
-            return None
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="refresh_token", path="/")
 
 
 def create_access_token(user_uuid: str) -> str:
