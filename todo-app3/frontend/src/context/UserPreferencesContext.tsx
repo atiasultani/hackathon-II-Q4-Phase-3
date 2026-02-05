@@ -1,11 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { optimizeAnimationForDevice } from '../utils/animation-utils';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { ChatKitProvider } from "@chatkit/react";
+import { optimizeAnimationForDevice } from "../utils/animation-utils";
 
 // Define types
 interface UserPreference {
   animationsEnabled: boolean;
   animationSpeed: number;
-  motionSensitivity: 'low' | 'medium' | 'high';
+  motionSensitivity: "low" | "medium" | "high";
   colorTheme: string;
   avatarStyle: string;
 }
@@ -22,59 +29,59 @@ interface UserPreferencesContextType {
 const DEFAULT_PREFERENCES: UserPreference = {
   animationsEnabled: true,
   animationSpeed: 1,
-  motionSensitivity: 'medium',
-  colorTheme: 'light',
-  avatarStyle: 'default',
+  motionSensitivity: "medium",
+  colorTheme: "light",
+  avatarStyle: "default",
 };
 
 // Create context
-const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined);
+const UserPreferencesContext =
+  createContext<UserPreferencesContextType | undefined>(undefined);
 
 // Provider component
-export const UserPreferencesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [preferences, setPreferences] = useState<UserPreference>(() => {
-    // Load from localStorage or use defaults
-    const savedPrefs = localStorage.getItem('user-preferences');
-    return savedPrefs ? JSON.parse(savedPrefs) : DEFAULT_PREFERENCES;
-  });
+export const UserPreferencesProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const [preferences, setPreferences] = useState<UserPreference>(
+    DEFAULT_PREFERENCES
+  );
 
   const [isReducedMotion, setIsReducedMotion] = useState(false);
 
-  // Check for reduced motion preference on mount
+  // ✅ Load preferences on client only
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const savedPrefs = localStorage.getItem("user-preferences");
+    if (savedPrefs) {
+      setPreferences(JSON.parse(savedPrefs));
+    }
+  }, []);
+
+  // Check for reduced motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     setIsReducedMotion(mediaQuery.matches);
 
     const handleChange = (e: MediaQueryListEvent) => {
       setIsReducedMotion(e.matches);
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  // Update localStorage when preferences change
+  // Persist preferences
   useEffect(() => {
-    localStorage.setItem('user-preferences', JSON.stringify(preferences));
+    localStorage.setItem("user-preferences", JSON.stringify(preferences));
   }, [preferences]);
 
-  // Update preferences function
   const updatePreferences = (newPrefs: Partial<UserPreference>) => {
-    setPreferences(prev => ({
-      ...prev,
-      ...newPrefs,
-    }));
+    setPreferences((prev) => ({ ...prev, ...newPrefs }));
   };
 
-  // Reset preferences to defaults
   const resetPreferences = () => {
     setPreferences(DEFAULT_PREFERENCES);
   };
 
-  // Determine if animations should run
   const shouldAnimate = (): boolean => {
     const perfData = optimizeAnimationForDevice();
 
@@ -94,17 +101,24 @@ export const UserPreferencesProvider: React.FC<{ children: ReactNode }> = ({ chi
   };
 
   return (
-    <UserPreferencesContext.Provider value={contextValue}>
-      {children}
-    </UserPreferencesContext.Provider>
+    <ChatKitProvider
+      publicKey="pk_live_XXXXXXXX"
+      domain="asultani-todo3.hf.space"
+    >
+      <UserPreferencesContext.Provider value={contextValue}>
+        {children}
+      </UserPreferencesContext.Provider>
+    </ChatKitProvider>
   );
 };
 
-// Custom hook to use the context
+// Hook
 export const useUserPreferences = (): UserPreferencesContextType => {
   const context = useContext(UserPreferencesContext);
-  if (context === undefined) {
-    throw new Error('useUserPreferences must be used within a UserPreferencesProvider');
+  if (!context) {
+    throw new Error(
+      "useUserPreferences must be used within a UserPreferencesProvider"
+    );
   }
   return context;
 };
