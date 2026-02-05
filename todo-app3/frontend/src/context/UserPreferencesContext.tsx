@@ -102,7 +102,7 @@ export const UserPreferencesProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <ChatKitProvider
-      publicKey="pk_live_XXXXXXXX"
+      publicKey="domain_pk_698410923bb0819590e60af8bbeee46a08c8da1bd8601a5b"
       domain="asultani-todo3.hf.space"
     >
       <UserPreferencesContext.Provider value={contextValue}>
