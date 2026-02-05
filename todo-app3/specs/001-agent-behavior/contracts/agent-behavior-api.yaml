@@ -1,0 +1,241 @@
+# API Contract: AI Todo Chatbot Agent Behavior
+
+## Base URL
+```
+https://api.yourapp.com
+```
+
+## Chat Endpoint
+
+### POST /api/{user_id}/chat
+
+Process natural language input from a user and return appropriate response with potential MCP tool calls.
+
+#### Request
+```json
+{
+  "conversation_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "message": "Add a task to call mom at 3 PM",
+  "context": {
+    "previous_messages": [
+      {
+        "role": "user",
+        "content": "I need to schedule a meeting",
+        "timestamp": "2023-01-15T10:30:00Z"
+      },
+      {
+        "role": "assistant",
+        "content": "Sure, what is the meeting about?",
+        "timestamp": "2023-01-15T10:31:00Z"
+      }
+    ],
+    "active_tasks": ["task-uuid-1", "task-uuid-2"],
+    "recent_intents": ["LIST_TASKS", "IDENTIFY_TASK"]
+  }
+}
+```
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Chat processed successfully
+- 400: Invalid request format
+- 401: Unauthorized (invalid/expired token)
+- 403: Forbidden (user doesn't have access to conversation)
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "conversation_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "response": "I've added the task: 'call mom' scheduled for 3:00 PM.",
+  "tool_calls": [
+    {
+      "tool_name": "add_task",
+      "arguments": {
+        "title": "call mom",
+        "due_time": "15:00",
+        "description": "Call mother"
+      }
+    }
+  ],
+  "intent_detected": "ADD_TASK",
+  "confidence": 0.95,
+  "context_updated": {
+    "active_tasks": ["task-uuid-1", "task-uuid-2", "new-task-uuid"],
+    "recent_intents": ["LIST_TASKS", "IDENTIFY_TASK", "ADD_TASK"]
+  }
+}
+```
+
+#### Error Response (400)
+```json
+{
+  "error": "Validation failed",
+  "message": "Invalid request format",
+  "details": {
+    "message": "Message field is required",
+    "conversation_id": "Must be a valid UUID if provided"
+  }
+}
+```
+
+#### Error Response (401)
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or expired access token"
+}
+```
+
+## Context Management Endpoints
+
+### GET /api/{user_id}/conversations
+
+Retrieve list of user's conversations with context summaries.
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Successfully retrieved conversations
+- 401: Unauthorized
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "conversations": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "title": "Task management session",
+      "last_activity": "2023-01-15T10:30:00Z",
+      "message_count": 12,
+      "context_summary": "Discussed 5 tasks, 2 completed, 3 pending"
+    }
+  ]
+}
+```
+
+### GET /api/{user_id}/conversations/{conversation_id}/messages
+
+Retrieve messages from a specific conversation for context reconstruction.
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Query Parameters
+- `limit` (optional): Number of messages to return (default: 10)
+- `before` (optional): Return messages before this timestamp
+- `after` (optional): Return messages after this timestamp
+
+#### Response Codes
+- 200: Successfully retrieved messages
+- 401: Unauthorized
+- 403: Forbidden (user doesn't have access to conversation)
+- 404: Conversation not found
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "messages": [
+    {
+      "id": "msg-a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "role": "user",
+      "content": "What do I have to do today?",
+      "timestamp": "2023-01-15T10:30:00Z"
+    },
+    {
+      "id": "msg-b1c2d3e4-f5g6-7890-1234-567890abcdef",
+      "role": "assistant",
+      "content": "You have 3 tasks scheduled for today: 'buy groceries', 'call dentist', and 'finish report'",
+      "timestamp": "2023-01-15T10:31:00Z",
+      "tool_calls": [
+        {
+          "tool_name": "list_tasks",
+          "result": {
+            "tasks": [
+              {"id": "task1", "title": "buy groceries", "due_today": true},
+              {"id": "task2", "title": "call dentist", "due_today": true},
+              {"id": "task3", "title": "finish report", "due_today": true}
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Agent Capabilities Endpoints
+
+### GET /api/agent/capabilities
+
+Retrieve the current capabilities and supported intents of the AI agent.
+
+#### Headers
+```
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Successfully retrieved capabilities
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "capabilities": {
+    "supported_intents": [
+      "ADD_TASK",
+      "LIST_TASKS",
+      "COMPLETE_TASK",
+      "DELETE_TASK",
+      "UPDATE_TASK"
+    ],
+    "supported_reference_types": [
+      "BY_TITLE",
+      "BY_POSITION",
+      "BY_PARTIAL_MATCH",
+      "BY_ID",
+      "BY_CONTEXT"
+    ],
+    "max_context_window": 20,
+    "response_timeout_seconds": 30,
+    "version": "1.0.0"
+  }
+}
+```
+
+## Security
+
+### Authentication
+- All endpoints require valid JWT token in Authorization header
+- Token must be validated for each request
+- User ID in token must match the user_id in the URL path
+
+### Rate Limiting
+- Chat endpoint limited to 60 requests per minute per user
+- Context retrieval endpoints limited to 100 requests per minute per user
+- Exceeding limits results in 429 responses
+
+### Input Validation
+- Message content limited to 1000 characters
+- All inputs sanitized to prevent injection attacks
+- Conversation IDs validated as proper UUID format
+
+### Data Protection
+- Conversation history encrypted at rest
+- User isolation enforced at database level
+- No sensitive information stored in plain text

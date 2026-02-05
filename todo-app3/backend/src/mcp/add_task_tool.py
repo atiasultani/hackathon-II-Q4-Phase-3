@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional
 from uuid import UUID
 from ..services.database_service import DatabaseService
 from ..models import Task
+from ..decorators.authz import require_user_ownership, authorize_user_action
 
 
 class AddTaskTool:
@@ -18,6 +19,7 @@ class AddTaskTool:
     def __init__(self, db_service: DatabaseService):
         self.db_service = db_service
 
+    @require_user_ownership
     def run(self, user_id: str, title: str, description: Optional[str] = None) -> Dict[str, Any]:
         """
         Execute the add_task operation
