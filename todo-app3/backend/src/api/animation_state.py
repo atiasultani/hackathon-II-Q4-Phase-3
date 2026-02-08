@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 import asyncio
 import json
@@ -37,7 +37,7 @@ class AgentActivityUpdate(BaseModel):
     timestamp: str
 
 class AnimationPerformanceMetrics(BaseModel):
-    device_info: Dict[str, any]
+    device_info: Dict[str, Any]
     performance_metrics: Dict[str, float]
     timestamp: str
 
@@ -47,6 +47,12 @@ manager = WebSocketManager()
 # Store for animation states
 animation_states: Dict[str, AnimationState] = {}
 agent_activities: Dict[str, AgentActivity] = {}
+
+# Dependency to get current user (would be implemented based on your auth system)
+async def get_current_user():
+    # Placeholder - implement based on your authentication system
+    # This should extract user from token/cookie/header
+    return User(id="placeholder_user_id", email="user@example.com")
 
 @router.websocket("/ws/animation/{conversation_id}")
 async def websocket_animation_endpoint(websocket: WebSocket, conversation_id: str):
@@ -229,12 +235,6 @@ async def get_active_animations(
         "active_conversations": active_conversations,
         "total_active": len(active_conversations)
     }
-
-# Dependency to get current user (would be implemented based on your auth system)
-async def get_current_user():
-    # Placeholder - implement based on your authentication system
-    # This should extract user from token/cookie/header
-    return User(id="placeholder_user_id", email="user@example.com")
 
 # Additional utility endpoints
 @router.delete("/animation/reset/{conversation_id}")

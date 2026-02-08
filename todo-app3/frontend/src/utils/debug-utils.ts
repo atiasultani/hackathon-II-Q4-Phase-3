@@ -138,7 +138,7 @@ export class DebugLogger {
     this.timeline.addEvent(event);
 
     // Console logging for development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.group(`🎨 Animation Debug: ${type}`);
       console.log('Component:', component || 'Unknown');
       console.log('Data:', data);

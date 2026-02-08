@@ -299,7 +299,7 @@ export const AnimationOptimizer: React.FC<AnimationOptimizerProps> = ({
   }`;
 
   // Show performance overlay in development
-  const showPerformanceOverlay = process.env.NODE_ENV === 'development';
+  const showPerformanceOverlay = import.meta.env.DEV;
 
   return (
     <div className={optimizedClassName}>

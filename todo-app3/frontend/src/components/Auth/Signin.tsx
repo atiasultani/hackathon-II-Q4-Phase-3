@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, getCurrentUser } from '../../services/api_client';
+import { login as loginApi, getCurrentUser } from '../../services/api_client';
 import { useAuth } from '../../contexts/AuthContext';
 import './../styles/Auth.css';
 
@@ -12,7 +12,7 @@ const Signin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { login } = useAuth(); // Use the login function from auth context
+  const { login: loginContext } = useAuth(); // Rename to avoid conflict
 
   const handleChange = (e) => {
     setFormData({
@@ -28,14 +28,14 @@ const Signin = () => {
 
     try {
       // Use the authentication service instead of direct API call
-      const response = await login(formData.email, formData.password);
+      const response = await loginApi(formData.email, formData.password);
 
       // The login service handles HttpOnly cookie storage automatically
       // Now get user information to update the auth context
       try {
         const userData = await getCurrentUser();
         // Update auth context with user info
-        login({
+        loginContext({
           id: userData.user_id || userData.id,
           email: userData.email || formData.email
         });

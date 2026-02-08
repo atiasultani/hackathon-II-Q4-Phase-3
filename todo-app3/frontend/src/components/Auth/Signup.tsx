@@ -12,7 +12,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { login } = useAuth(); // Use the login function from auth context
+  const { login: loginContext } = useAuth(); // Rename to avoid conflict
 
   const handleChange = (e) => {
     setFormData({
@@ -35,7 +35,7 @@ const Signup = () => {
       try {
         const userData = await getCurrentUser();
         // Update auth context with user info
-        login({
+        loginContext({
           id: userData.user_id || userData.id,
           email: userData.email || formData.email
         });

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, logout } from '../services/api_client';
+import { useAuth } from '../contexts/AuthContext';
+import { logout } from '../services/api_client';
 import { UserPreferencesProvider } from '../context/UserPreferencesContext';
 import ChatContainer from '../components/chat-interface/ChatContainer';
 import TaskList from '../components/TaskList';
@@ -9,47 +10,18 @@ import '../styles/Auth.css';
 import 'tailwindcss/tailwind.css';
 
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState([]);
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'tasks'
   const navigate = useNavigate();
-
-  // Check for user authentication
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = await getCurrentUser();
-        setUser(userData);
-      } catch (error) {
-        console.error('User not authenticated:', error);
-        // Redirect to login if not authenticated
-        navigate('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [navigate]);
+  const { user, logout: logoutContext } = useAuth(); // Use auth context
 
   const handleLogout = async () => {
     try {
-      await logout();
-      setUser(null);
-      navigate('/login');
+      await logoutContext(); // Use context logout which handles both API and local state
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="app-loading">
-        <h2>Loading...</h2>
-      </div>
-    );
-  }
 
   return (
     <UserPreferencesProvider>

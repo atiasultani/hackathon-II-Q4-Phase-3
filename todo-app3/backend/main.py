@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from src.api.chat_endpoint import router as chat_router
 from src.api.auth_endpoint import router as auth_router
+from src.api.animation_state import router as animation_router
 from src.middleware.auth_middleware import JWTBearer
 
 # Load environment variables
@@ -29,7 +30,6 @@ app.add_middleware(
         "https://*.vercel.app",    # Vercel deployments
         "https://*.netlify.app",   # Netlify deployments
         "https://*.github.io",     # GitHub Pages
-        "*"  # In development only - restrict in production
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -42,6 +42,7 @@ jwt_bearer = JWTBearer()
 # Include API routes
 app.include_router(chat_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
+app.include_router(animation_router, prefix="/api")
 
 # Add a basic health check endpoint
 @app.get("/")

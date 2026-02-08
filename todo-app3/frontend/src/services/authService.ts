@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { storeToken, getToken, removeToken } from '../utils/auth_utils';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 class AuthService {
   constructor() {
@@ -11,33 +10,8 @@ class AuthService {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true, // Include cookies in requests
     });
-
-    // Add interceptor to include token in requests
-    this.api.interceptors.request.use(
-      (config) => {
-        const token = getToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Add interceptor to handle token expiration
-    this.api.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Token might be expired, remove it
-          removeToken();
-        }
-        return Promise.reject(error);
-      }
-    );
   }
 
   async signup(email, password) {
@@ -67,11 +41,9 @@ class AuthService {
   async signout() {
     try {
       const response = await this.api.post('/auth/logout');
-      removeToken();
       return response.data;
     } catch (error) {
-      // Even if the API call fails, we should still remove the token locally
-      removeToken();
+      // Even if the API call fails, we should still handle local cleanup
       throw this.handleError(error);
     }
   }

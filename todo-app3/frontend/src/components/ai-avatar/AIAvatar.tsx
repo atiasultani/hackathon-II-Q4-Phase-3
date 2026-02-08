@@ -65,7 +65,16 @@ const AIAvatar: React.FC<AIAvatarProps> = ({
   useEffect(() => {
     if (!conversationId) return;
 
-    const wsService = getWebSocketService();
+    // Initialize WebSocket service with the specific conversation endpoint
+    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}/ws/animation/${conversationId}`;
+
+    // Get or create WebSocket service with the conversation-specific URL
+    const wsService = getWebSocketService({
+      url: wsUrl,
+      reconnectInterval: 5000,
+      maxReconnectAttempts: 10,
+      heartbeatInterval: 30000,
+    });
 
     const unsubscribe = wsService.subscribeToAnimationUpdates((data) => {
       if (data.conversation_id === conversationId) {
