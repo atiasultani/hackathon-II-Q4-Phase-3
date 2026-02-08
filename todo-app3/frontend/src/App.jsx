@@ -1,98 +1,101 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserPreferencesProvider } from './context/UserPreferencesContext';
-import ChatContainer from './components/chat-interface/ChatContainer';
-import TaskList from './components/TaskList';
-import { fetchTasks, getTokenForUser } from './services/api_client';
+import Signup from './pages/Signup';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import { getCurrentUser } from './services/api_client';
 import './styles/App.css';
+import './styles/Auth.css';
 import 'tailwindcss/tailwind.css';
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [tasks, setTasks] = useState([]);
-  const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'tasks'
+// Protected route component
+const ProtectedRoute = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = React.useState(null);
 
-  // Check for user authentication
-  useEffect(() => {
-    const initializeAuth = async () => {
-      // Try to get a token for the demo user
+  React.useEffect(() => {
+    const checkAuth = async () => {
       try {
-        await getTokenForUser('user123');
-
-        // Set the mock user
-        const mockUser = { id: 'user123', name: 'Demo User' };
-        setUser(mockUser);
+        await getCurrentUser();
+        setIsAuthenticated(true);
       } catch (error) {
-        console.error('Error initializing authentication:', error);
-        // Still set the mock user but log the error
-        const mockUser = { id: 'user123', name: 'Demo User' };
-        setUser(mockUser);
-      } finally {
-        setLoading(false);
+        setIsAuthenticated(false);
       }
     };
 
-    initializeAuth();
+    checkAuth();
   }, []);
 
-  // Load tasks from backend when component mounts
-  useEffect(() => {
-    const loadTasks = async () => {
+  if (isAuthenticated === null) {
+    return <div className="app-loading"><h2>Checking authentication...</h2></div>;
+  }
+
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+// Public route component (redirects if already logged in)
+const PublicRoute = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = React.useState(null);
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
       try {
-        const data = await fetchTasks(user.id);
-        setTasks(data.tasks || []);
+        await getCurrentUser();
+        setIsAuthenticated(true);
       } catch (error) {
-        console.error('Error fetching tasks:', error);
+        setIsAuthenticated(false);
       }
     };
 
-    if (user) {
-      loadTasks();
-    }
-  }, [user]);
+    checkAuth();
+  }, []);
 
-  if (loading) {
-    return (
-      <div className="app-loading">
-        <h2>Loading...</h2>
-      </div>
-    );
+  if (isAuthenticated === null) {
+    return <div className="app-loading"><h2>Checking authentication...</h2></div>;
   }
 
+  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+};
+
+function App() {
   return (
-    <UserPreferencesProvider>
-      <div className="app">
-        <header className="app-header">
-          <h1>AI-Powered Todo Assistant</h1>
-          <div className="user-info">
-            <span>Welcome, {user?.name || 'User'}!</span>
-          </div>
-        </header>
-
-        <nav className="app-nav">
-          <button
-            className={activeTab === 'chat' ? 'active' : ''}
-            onClick={() => setActiveTab('chat')}
-          >
-            Chat
-          </button>
-          <button
-            className={activeTab === 'tasks' ? 'active' : ''}
-            onClick={() => setActiveTab('tasks')}
-          >
-            My Tasks
-          </button>
-        </nav>
-
-        <main className="app-main">
-          {activeTab === 'chat' ? (
-            <ChatContainer userId={user.id} setTasks={setTasks} />
-          ) : (
-            <TaskList tasks={tasks} setTasks={setTasks} />
-          )}
-        </main>
-      </div>
-    </UserPreferencesProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route
+          path="/signup"
+          element={
+            <PublicRoute>
+              <UserPreferencesProvider>
+                <Signup />
+              </UserPreferencesProvider>
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <UserPreferencesProvider>
+                <Login />
+              </UserPreferencesProvider>
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <UserPreferencesProvider>
+                <Dashboard />
+              </UserPreferencesProvider>
+            </ProtectedRoute>
+          }
+        />
+        {/* Redirect any other routes to dashboard if authenticated */}
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </Router>
   );
 }
 

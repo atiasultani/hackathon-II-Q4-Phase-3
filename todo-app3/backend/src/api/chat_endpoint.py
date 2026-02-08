@@ -4,7 +4,7 @@ from uuid import UUID
 import json
 from datetime import datetime
 
-from ..middleware.auth_middleware import JWTBearer, verify_token_owner
+from ..middleware.auth_middleware import JWTBearer, verify_token_owner, JWTBearerCookie
 from ..middleware.rate_limit_middleware import rate_limit_middleware
 from ..services.database_service import DatabaseService
 from ..utils.database import get_session
@@ -16,30 +16,29 @@ from ..nlp.intent_classifier import IntentClassifier, IntentType, get_intent_and
 router = APIRouter()
 
 
-@router.post("/{user_id}/chat")
+@router.post("/chat")
 async def chat_endpoint(
     request: Request,
-    user_id: str,
     message_data: Dict[str, Any],
-    token: str = Depends(JWTBearer()),
+    token: str = Depends(JWTBearerCookie(auto_error=True)),  # Updated to use cookie-based auth
     session: Session = Depends(get_session)
 ):
     """
     Chat endpoint that handles user messages and returns AI-generated responses with tool calls
 
     Args:
-        user_id: The ID of the authenticated user making the request
         message_data: Dictionary containing conversation_id (optional) and message (required)
 
     Returns:
         Dictionary containing conversation_id, response, and tool_calls
     """
-    # Verify that the authenticated user matches the user_id in the path
+    # Get the authenticated user ID from the JWT token (no need to verify against path parameter anymore)
     authenticated_user_id = getattr(request.state, 'user_id', None)
-    if authenticated_user_id != user_id:
+
+    if not authenticated_user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not have permission to access this conversation"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
         )
 
     # Apply rate limiting
@@ -55,22 +54,20 @@ async def chat_endpoint(
             detail="Message is required"
         )
 
-    # Convert user_id to UUID for database operations
-    # Since authentication has passed, we can use the authenticated user_id
-    # First, try to use the authenticated user_id from the request state
-    auth_user_id = getattr(request.state, 'user_id', None)
-
     # Convert the authenticated user_id to UUID for database operations
     try:
-        user_uuid = UUID(auth_user_id)
+        user_uuid = UUID(authenticated_user_id)
     except (ValueError, TypeError, AttributeError):
         # If the authenticated user_id is not a UUID or is None, handle string IDs
         # For demo purposes with string user IDs like "user123", we'll create a deterministic UUID
         import hashlib
-        user_uuid = uuid.UUID(bytes=hashlib.md5(auth_user_id.encode()).digest()[:16] if auth_user_id else b'default_user')
+        user_uuid = UUID(bytes=hashlib.md5(authenticated_user_id.encode()).digest()[:16] if authenticated_user_id else b'default_user')
 
     # Initialize database service
     db_service = DatabaseService(session)
+
+    # Ensure user exists in the database (get or create) using the authenticated user_id string
+    user_record = db_service.get_or_create_user(authenticated_user_id)
 
     # Load conversation history if conversation_id is provided
     conversation = None
@@ -134,13 +131,13 @@ async def chat_endpoint(
 
             if task_details.get("title"):
                 result = add_task_tool.run(
-                    user_id=user_id,
+                    user_id=str(user_uuid),  # Use the converted UUID
                     title=task_details["title"],
                     description=task_details.get("description")
                 )
                 response_text = f"I've added the task: {result['task']['title']}"
 
-                args = {"user_id": user_id, "title": task_details["title"]}
+                args = {"user_id": str(user_uuid), "title": task_details["title"]}  # Use the converted UUID
                 if task_details.get("description"):
                     args["description"] = task_details["description"]
 
@@ -156,7 +153,7 @@ async def chat_endpoint(
 
     elif intent == IntentType.LIST_TASKS and confidence >= MIN_CONFIDENCE:
         try:
-            result = list_tasks_tool.run(user_id=user_id)
+            result = list_tasks_tool.run(user_id=str(user_uuid))  # Use the converted UUID
             tasks = result['tasks']
 
             if tasks:
@@ -167,7 +164,7 @@ async def chat_endpoint(
 
             tool_calls.append({
                 "tool_name": "list_tasks",
-                "arguments": {"user_id": user_id},
+                "arguments": {"user_id": str(user_uuid)},  # Use the converted UUID
                 "result": result
             })
         except Exception as e:
@@ -175,7 +172,7 @@ async def chat_endpoint(
 
     elif intent == IntentType.COMPLETE_TASK and confidence >= MIN_CONFIDENCE:
         try:
-            list_result = list_tasks_tool.run(user_id=user_id)
+            list_result = list_tasks_tool.run(user_id=str(user_uuid))  # Use the converted UUID
             tasks = list_result['tasks']
 
             if tasks:
@@ -183,18 +180,18 @@ async def chat_endpoint(
                 incomplete_task = next((t for t in tasks if not t['completed']), None)
 
                 if incomplete_task:
-                    complete_result = complete_task_tool.run(user_id=user_id, task_id=incomplete_task['id'])
+                    complete_result = complete_task_tool.run(user_id=str(user_uuid), task_id=incomplete_task['id'])  # Use the converted UUID
                     response_text = f"I've marked the task '{incomplete_task['title']}' as completed."
 
                     tool_calls.extend([
                         {
                             "tool_name": "list_tasks",
-                            "arguments": {"user_id": user_id},
+                            "arguments": {"user_id": str(user_uuid)},  # Use the converted UUID
                             "result": list_result
                         },
                         {
                             "tool_name": "complete_task",
-                            "arguments": {"user_id": user_id, "task_id": incomplete_task['id']},
+                            "arguments": {"user_id": str(user_uuid), "task_id": incomplete_task['id']},  # Use the converted UUID
                             "result": complete_result
                         }
                     ])
@@ -207,7 +204,7 @@ async def chat_endpoint(
 
     elif intent == IntentType.UPDATE_TASK and confidence >= MIN_CONFIDENCE:
         try:
-            list_result = list_tasks_tool.run(user_id=user_id)
+            list_result = list_tasks_tool.run(user_id=str(user_uuid))  # Use the converted UUID
             tasks = list_result['tasks']
 
             if tasks:
@@ -228,7 +225,7 @@ async def chat_endpoint(
                 if new_content:
                     # Determine if this is a title or description update
                     update_result = update_task_tool.run(
-                        user_id=user_id,
+                        user_id=str(user_uuid),  # Use the converted UUID
                         task_id=task_to_update['id'],
                         title=new_content.capitalize() if new_content else None
                     )
@@ -238,12 +235,12 @@ async def chat_endpoint(
                     tool_calls.extend([
                         {
                             "tool_name": "list_tasks",
-                            "arguments": {"user_id": user_id},
+                            "arguments": {"user_id": str(user_uuid)},  # Use the converted UUID
                             "result": list_result
                         },
                         {
                             "tool_name": "update_task",
-                            "arguments": {"user_id": user_id, "task_id": task_to_update['id'], "title": new_content.capitalize()},
+                            "arguments": {"user_id": str(user_uuid), "task_id": task_to_update['id'], "title": new_content.capitalize()},  # Use the converted UUID
                             "result": update_result
                         }
                     ])
@@ -256,7 +253,7 @@ async def chat_endpoint(
 
     elif intent == IntentType.DELETE_TASK and confidence >= MIN_CONFIDENCE:
         try:
-            list_result = list_tasks_tool.run(user_id=user_id)
+            list_result = list_tasks_tool.run(user_id=str(user_uuid))  # Use the converted UUID
             tasks = list_result['tasks']
 
             if tasks:
@@ -276,7 +273,7 @@ async def chat_endpoint(
 
                 # Delete the task
                 delete_result = delete_task_tool.run(
-                    user_id=user_id,
+                    user_id=str(user_uuid),  # Use the converted UUID
                     task_id=target_task['id']
                 )
 
@@ -285,12 +282,12 @@ async def chat_endpoint(
                 tool_calls.extend([
                     {
                         "tool_name": "list_tasks",
-                        "arguments": {"user_id": user_id},
+                        "arguments": {"user_id": str(user_uuid)},  # Use the converted UUID
                         "result": list_result
                     },
                     {
                         "tool_name": "delete_task",
-                        "arguments": {"user_id": user_id, "task_id": target_task['id']},
+                        "arguments": {"user_id": str(user_uuid), "task_id": target_task['id']},  # Use the converted UUID
                         "result": delete_result
                     }
                 ])

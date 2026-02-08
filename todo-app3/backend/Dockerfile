@@ -15,29 +15,30 @@ RUN apt-get update \
         gcc \
         libpq-dev \
         postgresql-client \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy poetry files
-COPY pyproject.toml poetry.lock* /app/
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt /app/
 
-# Install poetry and dependencies
-RUN pip install "poetry==1.7.1" && poetry export -o requirements.txt -f requirements.txt --without-hashes
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy the rest of the application
 COPY . /app/
 
-# Make migration script executable
-COPY run_migrations.sh /app/run_migrations.sh
-RUN chmod +x /app/run_migrations.sh
-
-# Create non-root user
-RUN adduser --disabled-password --gecos '' appuser &&\
+# Create a non-root user for security
+RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser /app
 USER appuser
 
-# Expose port (Hugging Face Spaces uses dynamic ports)
+# Expose port (Hugging Face Spaces uses dynamic ports, but we set default)
 EXPOSE 7860
 
-# Command to run migrations and then start the application
-CMD ["sh", "-c", "./run_migrations.sh uvicorn main:app --host 0.0.0.0 --port 7860"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-7860}/health || exit 1
+
+# Command to run the application
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860} --workers 2"]

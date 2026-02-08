@@ -7,11 +7,10 @@ import { ResponseAnimation } from '../ai-avatar/ResponseAnimations';
 import { sendMessage } from '../../services/api_client';
 
 interface ChatContainerProps {
-  userId: string;
   setTasks?: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-const ChatContainer: React.FC<ChatContainerProps> = ({ userId }) => {
+const ChatContainer: React.FC<ChatContainerProps> = ({}) => {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +80,7 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userId }) => {
       });
 
       // Call the backend API
-      const response = await sendMessage(userId, inputValue, conversationId);
+      const response = await sendMessage(inputValue, conversationId);
 
       // Update avatar to thinking state during response
       updateAnimationState({
@@ -96,7 +95,7 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userId }) => {
       const aiMessage = {
         id: `ai-${Date.now()}`,
         role: 'assistant',
-        content: response.data.response || 'I processed your request.',
+        content: response.response || 'I processed your request.',
         timestamp: new Date().toISOString()
       };
 
@@ -109,23 +108,35 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userId }) => {
         intensity: 6,
       });
 
-      if (response.data.conversation_id && !conversationId) {
-        setConversationId(response.data.conversation_id);
+      if (response.conversation_id && !conversationId) {
+        setConversationId(response.conversation_id);
       }
 
       // Update tasks if included in response
-      if (response.data.tasks_updated && setTasks) {
-        setTasks(prevTasks => {
-          const updatedTasks = [...prevTasks];
-          response.data.tasks_updated.forEach(updatedTask => {
-            const existingIndex = updatedTasks.findIndex(t => t.id === updatedTask.id);
-            if (existingIndex !== -1) {
-              updatedTasks[existingIndex] = updatedTask;
-            } else {
-              updatedTasks.push(updatedTask);
-            }
-          });
-          return updatedTasks;
+      if (response.tool_calls && setTasks) {
+        // Process tool calls to update tasks
+        response.tool_calls.forEach(toolCall => {
+          if (toolCall.tool_name === 'add_task' && toolCall.result && toolCall.result.task) {
+            setTasks(prevTasks => [...prevTasks, toolCall.result.task]);
+          } else if (toolCall.tool_name === 'complete_task' && toolCall.result && toolCall.result.task) {
+            setTasks(prevTasks =>
+              prevTasks.map(task =>
+                task.id === toolCall.result.task.id ? toolCall.result.task : task
+              )
+            );
+          } else if (toolCall.tool_name === 'update_task' && toolCall.result && toolCall.result.task) {
+            setTasks(prevTasks =>
+              prevTasks.map(task =>
+                task.id === toolCall.result.task.id ? toolCall.result.task : task
+              )
+            );
+          } else if (toolCall.tool_name === 'delete_task' && toolCall.result && toolCall.arguments && toolCall.arguments.task_id) {
+            setTasks(prevTasks =>
+              prevTasks.filter(task => task.id !== toolCall.arguments.task_id)
+            );
+          } else if (toolCall.tool_name === 'list_tasks' && toolCall.result && toolCall.result.tasks) {
+            setTasks(toolCall.result.tasks);
+          }
         });
       }
     } catch (error) {

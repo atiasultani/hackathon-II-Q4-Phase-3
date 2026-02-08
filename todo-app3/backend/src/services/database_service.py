@@ -1,7 +1,9 @@
 from sqlmodel import Session, select
 from typing import List, Optional
-from ..models import Task, Conversation, Message
+from ..models import Task, Conversation, Message, User
 from uuid import UUID
+import hashlib
+from ..utils.password_utils import hash_password, verify_password
 
 
 class DatabaseService:
@@ -123,6 +125,83 @@ class DatabaseService:
             Message.conversation_id == conversation_id
         ).order_by(Message.created_at.desc()).limit(limit)
         return self.session.exec(query).all()
+
+    def get_or_create_user(self, user_identifier: str) -> User:
+        """Get an existing user by email or username, or create a new one if doesn't exist"""
+        # First, try to find user by email or username
+        user_query = select(User).where(
+            (User.email == user_identifier) | (User.username == user_identifier)
+        )
+        user = self.session.exec(user_query).first()
+
+        if user:
+            return user
+
+        # If not found, create a new user with a deterministic UUID based on the identifier
+        # This ensures the same user identifier always gets the same UUID
+        user_uuid_bytes = hashlib.md5(user_identifier.encode()).digest()
+        user_uuid = UUID(bytes=user_uuid_bytes[:16])
+
+        # Check if user exists with this specific UUID (in case of collision)
+        existing_user_query = select(User).where(User.id == user_uuid)
+        existing_user = self.session.exec(existing_user_query).first()
+
+        if existing_user:
+            return existing_user
+
+        # Create new user
+        user = User(
+            id=user_uuid,
+            email=f"{user_identifier}@example.com",  # Generate email from identifier
+            username=user_identifier,
+            password_hash="$2b$12$dummy_hash_for_demo_purposes"  # Dummy hash for demo
+        )
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
+    def create_user(self, email: str, password: str, username: Optional[str] = None) -> User:
+        """Create a new user with email, password, and optional username"""
+        # Check if user with this email already exists
+        existing_user = self.get_user_by_email(email)
+        if existing_user:
+            raise ValueError("User with this email already exists")
+
+        # Hash the password
+        hashed_password = hash_password(password)
+
+        # Create a new user with a random UUID
+        user = User(
+            email=email,
+            username=username or email.split('@')[0],  # Use email prefix as username if not provided
+            password_hash=hashed_password
+        )
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        """Get a user by their email address"""
+        user_query = select(User).where(User.email == email)
+        return self.session.exec(user_query).first()
+
+    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+        """Get a user by their UUID"""
+        user_query = select(User).where(User.id == user_id)
+        return self.session.exec(user_query).first()
+
+    def authenticate_user(self, email: str, password: str) -> Optional[User]:
+        """Authenticate a user by email and password"""
+        user = self.get_user_by_email(email)
+        if not user:
+            return None
+
+        if verify_password(password, user.password_hash):
+            return user
+
+        return None
 
     def cleanup_old_conversations(self, days_old: int = 730) -> int:  # 730 days = 2 years
         """Clean up conversations older than specified days (retention policy)"""

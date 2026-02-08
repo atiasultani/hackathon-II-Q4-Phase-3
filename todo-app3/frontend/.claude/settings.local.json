@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.specify/scripts/bash/create-phr.sh --title \"Auth-Integration-Verification\" --stage \"green\" --feature \"1-auth-integration\" --json)"
+    ]
+  }
+}

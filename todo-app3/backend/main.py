@@ -20,7 +20,17 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://hackathon-ii-q4-phase-3-git-002-fr-3daef0-atiasultanis-projects.vercel.app/"], # In production, specify exact origins
+    allow_origins=[
+        "http://localhost:3000",  # React dev server
+        "http://localhost:8000",  # Backend server
+        "http://127.0.0.1:8000",  # Alternative localhost
+        "http://localhost:5173",  # Vite dev server
+        "http://127.0.0.1:5173",  # Alternative Vite dev server
+        "https://*.vercel.app",    # Vercel deployments
+        "https://*.netlify.app",   # Netlify deployments
+        "https://*.github.io",     # GitHub Pages
+        "*"  # In development only - restrict in production
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,7 +41,7 @@ jwt_bearer = JWTBearer()
 
 # Include API routes
 app.include_router(chat_router, prefix="/api")
-app.include_router(auth_router, prefix="/api")
+app.include_router(auth_router, prefix="/api/auth")
 
 # Add a basic health check endpoint
 @app.get("/")
@@ -69,9 +79,9 @@ async def bad_request_handler(request: Request, exc: HTTPException):
     )
 
 @app.exception_handler(500)
-async def internal_error_handler(request: Request, exc: HTTPException):
+async def internal_error_handler(request: Request, exc: Exception):
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=500,
         content={
             "error": {
                 "code": "INTERNAL_ERROR",
@@ -83,9 +93,11 @@ async def internal_error_handler(request: Request, exc: HTTPException):
 # Run the application with uvicorn when executed directly
 if __name__ == "__main__":
     import uvicorn
+    # Hugging Face Spaces uses PORT environment variable
+    port = int(os.getenv("PORT", os.getenv("SPACE_PORT", 8000)))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
+        port=port,
         reload=True if os.getenv("APP_ENV") == "development" else False
     )
