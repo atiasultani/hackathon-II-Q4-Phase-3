@@ -1,0 +1,177 @@
+# API Contract: Authentication Service
+
+## Base URL
+```
+https://api.yourapp.com
+```
+
+## Authentication API
+
+### POST /api/auth/signup
+
+Register a new user account.
+
+#### Request
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+```
+
+#### Headers
+```
+Content-Type: application/json
+```
+
+#### Response Codes
+- 201: User registered successfully
+- 400: Validation error
+- 409: Email already exists
+- 500: Internal server error
+
+#### Success Response (201)
+```json
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "email": "user@example.com"
+  }
+}
+```
+
+#### Error Response (400)
+```json
+{
+  "error": "Validation failed",
+  "details": {
+    "email": "Invalid email format",
+    "password": "Password must be at least 8 characters with uppercase, lowercase, and number"
+  }
+}
+```
+
+#### Error Response (409)
+```json
+{
+  "error": "Conflict",
+  "message": "Email already exists"
+}
+```
+
+### POST /api/auth/signin
+
+Authenticate an existing user and return an access token.
+
+#### Request
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+```
+
+#### Headers
+```
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Authentication successful
+- 400: Missing fields
+- 401: Invalid credentials
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "email": "user@example.com"
+  },
+  "expiresIn": 3600
+}
+```
+
+#### Error Response (401)
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid credentials"
+}
+```
+
+### POST /api/auth/signout
+
+Logout the current user and invalidate the session.
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: Successfully signed out
+- 401: Unauthorized (invalid/expired token)
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "message": "Successfully signed out"
+}
+```
+
+### GET /api/auth/me
+
+Get the current authenticated user's profile information.
+
+#### Headers
+```
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+#### Response Codes
+- 200: User data retrieved successfully
+- 401: Unauthorized (invalid/expired token)
+- 500: Internal server error
+
+#### Success Response (200)
+```json
+{
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "email": "user@example.com",
+    "createdAt": "2023-01-15T10:30:00Z"
+  }
+}
+```
+
+## Security
+
+### JWT Token Format
+Access tokens follow the JWT standard with these claims:
+- `sub`: User ID (subject)
+- `exp`: Expiration time (Unix timestamp)
+- `iat`: Issued at time (Unix timestamp)
+- `jti`: JWT ID for potential revocation
+
+### Rate Limiting
+- Authentication endpoints are limited to 10 attempts per IP per minute
+- Exceeding limits results in temporary IP blocking
+
+### Password Requirements
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one numeric digit
+- At least one special character (optional but recommended)
+
+### Input Validation
+- Email format validation using standard regex
+- Password strength validation
+- Sanitization of all inputs to prevent injection attacks

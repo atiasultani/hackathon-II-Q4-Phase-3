@@ -10,7 +10,7 @@ interface ChatContainerProps {
   setTasks?: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-const ChatContainer: React.FC<ChatContainerProps> = ({}) => {
+const ChatContainer: React.FC<ChatContainerProps> = ({ setTasks }) => {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);

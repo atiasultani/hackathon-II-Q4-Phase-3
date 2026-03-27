@@ -1,5 +1,7 @@
 /**
- * Token management utilities for authentication
+ * Authentication utilities
+ * Currently using HttpOnly cookies for authentication,
+ * but keeping these functions for potential future token-based auth
  */
 
 /**

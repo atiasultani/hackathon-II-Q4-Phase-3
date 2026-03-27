@@ -292,7 +292,18 @@ export const getWebSocketService = (options?: WebSocketServiceOptions): WebSocke
   if (!websocketService && options) {
     websocketService = new WebSocketService(options);
   } else if (!websocketService) {
-    throw new Error('WebSocket service not initialized. Call with options first.');
+    // Initialize with a default URL if none exists, but allow reinitialization with new options
+    if (options) {
+      websocketService = new WebSocketService(options);
+    } else {
+      // Provide a default WebSocket URL
+      websocketService = new WebSocketService({
+        url: `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}/ws/animation/default`,
+        reconnectInterval: 5000,
+        maxReconnectAttempts: 10,
+        heartbeatInterval: 30000,
+      });
+    }
   }
 
   return websocketService;
